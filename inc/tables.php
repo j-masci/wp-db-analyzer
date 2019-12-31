@@ -5,10 +5,10 @@ namespace WP_DB_Analyzer;
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * @param $columns
- * @param array $rows
+ * @param $columns - Array of column keys mapped to column label. If null, is generated from $rows[0].
+ * @param $rows - Array of arrays or stdClass objects using the keys as in $columns.
  * @param array $args
- * @return string|void
+ * @return string
  */
 function render_table( $columns, array $rows, array $args = [] ){
 
@@ -16,6 +16,7 @@ function render_table( $columns, array $rows, array $args = [] ){
         'show_no_results' => false,
         'no_results_message' => "No Results",
         'add_class' => [],
+        'get_table_cell_tag' => null,
         'sanitize_column_key' => function( $in ) {
             return esc_attr( $in );
         },
@@ -28,18 +29,28 @@ function render_table( $columns, array $rows, array $args = [] ){
     ];
 
     // Merge the default arguments. There are easier ways to do this, but this is explicit.
-    // If the array element is set but equal to null, the default is used.
+    // If the array element of $args is set but equal to null, the default is used.
     foreach ( $defaults as $d1 => $d2 ) {
         if ( ! isset( $args[$d1] ) ) {
             $args[$d1] = $d2;
         }
     }
 
-    // I shouldn't have to do this for you (/me), but I will anyways.
-    $rows = array_values( $rows );
+    // validate $rows. Do this before $columns.
+    $rows = call_user_func( function() use( $rows, $args ) {
+        return array_values( array_map( function( $row ){
+            if ( is_object( $row ) ) {
+                return get_object_vars( $row );
+            } else if ( is_array( $row ) ) {
+                return $row;
+            } else {
+                return [];
+            }
+        }, $rows ) );
+    } );
 
-    // Grab the columns from the rows if the columns are not provided,
-    // and sanitize the column keys and values regardless.
+    // Validate $columns. Auto generate from $rows if null. Ensure that we
+    // validate $rows before running this.
     $columns = call_user_func( function() use( $columns, $rows, $args ) {
 
         $ret = [];
@@ -88,14 +99,18 @@ function render_table( $columns, array $rows, array $args = [] ){
 
         echo '<table>';
 
-        echo '<th>';
+        echo '<thead>';
+        echo '<tr>';
 
         // note: columns were already sanitized
         foreach ( $columns as $column_key => $column_label ) {
-            echo '<td class="col-' . $column_key . '">' . $column_label . '</td>';
+            echo '<th class="col-' . $column_key . '">' . $column_label . '</th>';
         }
 
-        echo '</th>';
+        echo '</tr>';
+        echo '</thead>';
+
+        echo '<tbody>';
 
         foreach ( $rows as $index => $row ){
 
@@ -105,11 +120,23 @@ function render_table( $columns, array $rows, array $args = [] ){
 
                 foreach ( $columns as $column_key => $column_label ) {
 
-                    $cell = isset( $row[$column_key] ) ? $rows[$column_key] : "";
+                    $cell = isset( $row[$column_key] ) ? $row[$column_key] : "";
+
+                    // this optional callback might be used to make the first
+                    // row of the table contain header cells.
+                    if ( $args['get_table_cell_tag'] ) {
+                        // pass in the entire row in addition to the column key,
+                        // this makes it possible to check if the $column_key is the first.
+                        $tag = $args['get_table_cell_tag']( $column_key, $row );
+                    } else {
+                        $tag = 'td';
+                    }
+
+                    $tag = in_array( $tag, [ 'td', 'th' ] ) ? $tag : 'td';
 
                     // column key has already been sanitized
                     echo '<td class="col-' . $column_key . '">';
-                    echo $args['sanitation_callback']( $cell, $column_key, $row );
+                    echo $args['sanitize_cell']( $cell, $column_key, $row );
                     echo '</td>';
                 }
 
@@ -117,6 +144,7 @@ function render_table( $columns, array $rows, array $args = [] ){
             }
         }
 
+        echo '</tbody>';
         echo '</table>';
     } else {
         echo '<p class="no-results">' . $args['no_results_msg'] . '</p>';

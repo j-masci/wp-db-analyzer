@@ -4,7 +4,6 @@
   "description": "WordPress Database Analyzer Plugin",
   "main": "index.js",
   "scripts": {
-    "build" : ""
   },
   "dependencies": {
   },

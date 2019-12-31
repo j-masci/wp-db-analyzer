@@ -21,72 +21,180 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 define('WP_DB_ANALYZER_DIR', dirname(__FILE__));
-
-Class WP_DB_Analyzer
-{
-    const MENU_SLUG = 'wp-database-analyzer';
-    const MENU_POSITION = 90;
-
-    /**
-     * plugin directory path
-     */
-    const DIR = WP_DB_ANALYZER_DIR;
-
-    public function __construct()
-    {
-        self::includes();
-        add_action('init', [$this, 'init']);
-        add_action('admin_init', [$this, 'admin_init']);
-        add_action('admin_menu', [$this, 'admin_menu']);
-    }
-
-    public static function admin_menu()
-    {
-
-        $title = "WP Database Analyzer";
-
-        add_menu_page($title, $title, 'manage_options', self::MENU_SLUG, function () {
-            include self::DIR . '/tmpl/menu-page.php';
-        }, 'dashicons-visibility', self::MENU_POSITION);
-
-    }
-
-    /**
-     *
-     */
-    public static function includes()
-    {
-        // include self::DIR . '/inc/eg.php';
-    }
-
-}
+define( 'WP_DB_ANALYZER_URL', plugins_url( 'wp-database-analyzer' ) );
 
 /**
- * Configure the WordPress environment.
+ * Bootstraps the plugin, handles the settings, and does a few
+ * other things.
  *
- * Class Main
- * @package WP_DB_Analyzer
+ * Class WP_DB_Analyzer_Plugin
  */
-Class Main
+Class WP_DB_Analyzer_Plugin
 {
+    /**
+     * Plugin version
+     */
+    const VERSION = "1.0";
 
+    /**
+     * @var array
+     */
+    public $settings;
+
+    /**
+     * Stores the singleton instance of self.
+     *
+     * @var null|self
+     */
     private static $instance;
 
+    /**
+     * Helps prevent including files twice.
+     *
+     * @var array
+     */
+    private $included_steps = [];
+
+    /**
+     * Preventing enqueueing scripts twice (which, actually wouldn't hurt
+     * much since WordPress would also catch this.)
+     *
+     * @var bool
+     */
+    private $scripts_enqueued = false;
+
+    /**
+     * WP_DB_Analyzer_Plugin constructor.
+     * @throws Exception
+     */
     public function __construct()
     {
 
+        $this->includes( 1 );
 
+        $this->settings = [
+            'menu_slug' => 'wp-database-analyzer',
+            'menu_position' => 90,
+            'path' => dirname( __FILE__ ),
+            'dir' => 'wp-database-analyzer',
+            'url' => plugins_url( 'wp-database-analyzer' ),
+        ];
+
+        add_action('admin_menu', [$this, 'admin_menu']);
+
+        // add_action('init', [$this, 'init']);
+        // add_action('admin_init', [$this, 'admin_init']);
+    }
+
+    /**
+     * @return WP_DB_Analyzer_Plugin|null
+     * @throws Exception
+     */
+    public static function get_instance(){
+
+        if ( self::$instance ) {
+            return self::$instance;
+        }
+
+        self::$instance = new self();
+        return self::$instance;
+    }
+
+    /**
+     * Add menu pages to wp-admin.
+     *
+     * @hooked 'admin_menu'
+     */
+    public function admin_menu()
+    {
+        $cap = 'manage_options';
+        $menu_slug = $this->get_setting( 'menu_slug' );
+        $menu_slug_settings = $menu_slug . '-settings';
+
+        add_menu_page( __("Database Analyzer",'wpda'), __("Database Analyzer",'wpda'), $cap, $menu_slug, false, 'dashicons-visibility', $this->settings['menu_position'] );
+
+        add_submenu_page( $menu_slug, __('Analyzer','wpda'), __('Analyzer','wpda'), $cap, $menu_slug, function(){
+            $this->include_template( 'analyzer.php' );
+        } );
+
+        add_submenu_page( $menu_slug, __('Settings','wpda'), __('Settings','wpda'), $cap, $menu_slug_settings, function(){
+            $this->include_template( 'settings.php' );
+        } );
+    }
+
+    /**
+     * @hooked 'init'
+     */
+    // public function init(){}
+
+    /**
+     * @hooked 'admin_init'
+     */
+    // public function admin_init(){}
+
+    /**
+     * Load dependencies, scripts/style, and include a file in the /tmpl directory.
+     *
+     * @param $filename
+     */
+    public function include_template( $filename ) {
+        $this->includes( 2 );
+        $this->enqueue_scripts();
+        include $this->settings['path'] . "/tmpl/$filename";
+    }
+
+    /**
+     * Register/enqueue scripts/styles. You can call many times.
+     *
+     * Not hooked onto 'admin_enqueue_scripts'. Lazy loaded instead.
+     */
+    public function enqueue_scripts(){
+
+        if ( $this->scripts_enqueued ) {
+            return;
+        }
+
+        $this->scripts_enqueued = true;
+
+        wp_enqueue_style( 'wp_database_analyzer_css', $this->get_url() . '/css/master.css', [], self::VERSION );
+    }
+
+    /**
+     * Include dependencies.
+     *
+     * On plugin init (every page load), pass in 1.
+     *
+     * On plugin specific pages, pass in 2.
+     *
+     * If lazy-loading some of the code causes issues, just pass in 2 on init (and
+     * remove remaining references to the method).
+     *
+     * @param $step
+     */
+    public function includes( $step )
+    {
+        if ( in_array( $step, $this->included_steps ) ) {
+            return;
+        }
+
+        $this->included_steps[] = $step;
+
+        // prefer to use absolute paths to include files.
+        $p = $this->settings['path'];
+
+        switch( $step ) {
+            case 1:
+
+                break;
+            case 2:
+
+                include $p . '/inc/sql.php';
+                include $p . '/inc/tables.php';
+                include $p . '/inc/matrix.php';
+                break;
+            default:
+        }
     }
 }
 
-function main()
-{
-
-    global $_wp_db_analyzer;
-
-    if ($_wp_db_analyzer === null) {
-        $_wp_db_analyzer = new Main();
-    }
-}
-
-main();
+WP_DB_Analyzer_Plugin::get_instance();
