@@ -28,11 +28,15 @@ Class SQL
         $matrix = new Matrix();
 
         foreach ( $t_values as $t_name => $t_obj ) {
-
             $t_expires = isset( $t_timeouts[$t_name]->option_value ) ? (int) $t_timeouts[$t_name]->option_value : 0;
-            $hours = $t_expires > 0 ? floor( ( $t_expires - $now ) / 3600 ) : 0;
-            $matrix->set_point( "Transients Count", $hours, $matrix->get_incrementor(), true );
+            $hours = $t_expires > 0 ? (int) floor( ( $t_expires - $now ) / 3600 ) : 0;
+            $matrix->set( $hours, "Number of Transients", $matrix->get_incrementer() );
         }
+
+        $matrix->sort_rows( function( $row_keys ) {
+            sort( $row_keys, SORT_NUMERIC );
+            return $row_keys;
+        });
 
         return $matrix;
     }
@@ -45,13 +49,13 @@ Class SQL
         global $wpdb;
         $posts = $wpdb->get_results("SELECT * FROM {$wpdb->posts} ORDER BY post_type ASC ");
 
-        $ret = new Matrix();
+        $matrix = new Matrix();
 
         foreach ($posts as $post) {
-            $ret->set_point( $post->post_status, $post->post_type, $ret->get_incrementor(), true);
+            $matrix->set( $post->post_status, $post->post_type, $matrix->get_incrementer() );
         }
 
-        return $ret;
+        return $matrix;
     }
 
     /**
@@ -71,7 +75,7 @@ Class SQL
         $ret = new Matrix();
 
         foreach ($rows as $row) {
-            $ret->set_point( @$row->post_type, format_date_time_string( @$row->post_date, "Y-m-d" ), @$row->count, true);
+            $ret->set( @$row->post_type, format_date_time_string( @$row->post_date, "Y-m-d" ), @$row->count );
         }
 
         return $ret;
@@ -96,30 +100,7 @@ Class SQL
         $ret = new Matrix();
 
         foreach ($rows as $row) {
-            $ret->set_point( $row->post_type, $row->meta_key, $row->count, true);
-        }
-
-        return $ret;
-    }
-
-    /**
-     * @return Matrix
-     */
-    public static function fun_report(){
-
-        global $wpdb;
-
-        // best to use group by here and let SQL do the hard work since there
-        // could be 1m+ rows otherwise.
-        // todo: I think this query is returning what we want but i'm not entirely sure
-        $q = "SELECT post_date, post_modified, count(*) AS count FROM {$wpdb->posts} GROUP BY CAST(post_date AS DATE), CAST(post_modified AS DATE) ORDER BY post_date DESC ";
-
-        $rows = $wpdb->get_results( $q );
-
-        $ret = new Matrix();
-
-        foreach ($rows as $row) {
-            $ret->set_point( format_date_time_string( @$row->post_modified, "Y-m-d" ), format_date_time_string( @$row->post_date, "Y-m-d" ), @$row->count, true);
+            $ret->set( $row->meta_key, $row->post_type, $row->count );
         }
 
         return $ret;

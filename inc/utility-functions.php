@@ -5,13 +5,12 @@ namespace WP_DB_Analyzer;
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * Gets rows from wp_options which are used for transient VALUES, excluding transient timeouts.
+ * Gets wp_options rows for transient VALUES, but not the rows for transient timeouts.
  *
- * The return value both adds a property for and is indexed by the transient name. The transient
- * name is what is used in set_transient(), and is a substring of the option_name column.
+ * The return value adds a property for, and, is indexed by the transient name. The transient
+ * name is used in set_transient(), and is a substring of option_name.
  *
- * Note that this does not select nor return the option_value as of now, since its not needed
- * and could cause performance issues on misbehaving databases with millions of transients (i've seen it).
+ * The option value is not included in the return (for performance reasons).
  *
  * @return array
  */
@@ -26,10 +25,7 @@ function get_transients(){
 
     if ( $transients && is_array( $transients ) ) {
         foreach ( $transients as $trans ) {
-
-            var_dump( $trans->option_name );
             $transient_name = substr( $trans->option_name, $prefix_length, strlen( $trans->option_name ) - $prefix_length );
-            var_dump( $transient_name );
             $trans->transient_name = $transient_name;
             $ret[$transient_name] = $trans;
         }
@@ -39,10 +35,12 @@ function get_transients(){
 }
 
 /**
- * Gets rows from wp_options which are used for transient TIMEOUTS, excluding transient values.
+ * Gets wp_options rows for transient TIMEOUTS, but not the rows that store the values.
  *
- * The return value both adds a property for and is indexed by the transient name. The transient
- * name is what is used in set_transient(), and is a substring of the option_name column.
+ * The return value adds a property for, and, is indexed by the transient name. The transient
+ * name is used in set_transient(), and is a substring of option_name.
+ *
+ * The expiry is found in the form of a timestamp in the option_value column.
  *
  * @return array
  */
@@ -50,7 +48,6 @@ function get_transient_timeouts(){
 
     global $wpdb;
 
-    // Select * here because we want the option_value unlike in other places.
     $transients = $wpdb->get_results("SELECT * FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_%' ORDER BY option_id ASC ");
 
     $prefix_length = strlen( "_transient_timeout_" );
@@ -81,7 +78,23 @@ function format_date_time_string( $date_time_string, $format = "Ymd", $timezone 
     return $dt ? $dt->format( $format ) : "";
 }
 
+/**
+ * Simply wraps try/catch around new DateTime, and returns false
+ * on errors.
+ *
+ * Additionally returns false if the string you pass in is empty.
+ *
+ * @param $date_time_string
+ * @param null $timezone
+ * @return bool|\DateTime
+ */
 function get_date_time_or_false( $date_time_string, $timezone = null ){
+
+    // todo: is it better to have this check or should we leave it out? Does this prevent getting a datetime with timestamp 0?
+    if ( ! $date_time_string ) {
+        return false;
+    }
+
     try{
         return new \DateTime( $date_time_string, $timezone );
     } catch( \Exception $e ) {

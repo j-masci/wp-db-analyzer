@@ -5,179 +5,195 @@ namespace WP_DB_Analyzer;
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * A matrix like object for holding the x and y axis labels,
- * and the data associated with 1 x and 1 y value.
+ * A class to build a matrix dynamically.
  *
- * The class will help you build the data and then export
- * it to a record set which you can use to render an HTML
- * table with.
+ * ie.
  *
- * In the context of rendering an HTML table, the x-axis values
- * are the labels in the top row. The y-axis values are the labels
- * in the left column. The origin is the top left of the table (unlike
- * a traditional graph in mathematics where the origin is bottom left).
+ * Origin  | Column 1  | Column 2  | Column 3
+ * Row 1   | Point 1-1 | Point 1-2 | Point 1-3
+ * Row 2   | Point 2-1 | Point 2-2 | Point 2-3
  *
- * Ie.
+ * todo: make fluent?
  *
- * Origin, X Label 1, X Label 2,
- * Y Label 1, Point 1-1, Point 1-2
- * Y Label 2, Point 2-1, Point 2-2
- * Y Label 3, Point 3-1, Point 3-3
+ * todo: Add validation to the set_matrix method (possibly mutating input instead of throwing an error if some rows are missing some columns).
  *
- * Point 1-1 === $this->get_point( "X Label 1", "Y Label 1" )
+ * To display your data in an HTML table with row and column headings, @see convert_to_record_set_with_headings.
  *
- * Class Matrix
+ * Class Matrix_Alternate
+ * @package WP_DB_Analyzer
  */
 Class Matrix{
 
+    const DEFAULT_HEADING_KEY = "__heading";
+
     /**
-     * ie. [ "x1", "x2", "x3" ]
+     * An array of arrays.
+     *
+     * Likely an associative array of associative arrays (depends
+     * on what you pass into $this->set()).
+     *
+     * All methods (except for $this->set_matrix()) will ensure
+     * that every column always has the same array keys.
+     *
+     * $matrix is an array of "rows". Each "row" is an array containing
+     * columns.
+     *
+     * See the example method at the bottom if you need clarity on
+     * the structure of this.
      *
      * @var array
      */
-    public $x_axis = [];
+    private $matrix = [];
 
     /**
-     * ie. [ "y1", "y2", "y3" ]
-     *
-     * @var array
-     */
-    public $y_axis = [];
-
-    /**
-     * A matrix who's dimension is the count of the x and y axis respectively.
-     *
-     * ie. [ "y1" => [ "x1" => "v11", "x2" => "v21", ... ], "x2" => [ ... ] ... ]
-     *
-     * It's worth noting that every array in the matrix is indexed by
-     * an x-axis or y-axis value, and not a number. Doing it this way allows
-     * us to order the x and y axis even after registering all of our data.
-     *
-     * @var array
-     */
-    public $matrix = [];
-
-    /**
-     * if this becomes slow, we can store values in a flipped array and
-     * array flip upon retrieval. isset is faster than in_array.
-     *
-     * @param $value
-     */
-    public function register_x_axis( $value ){
-        if ( ! in_array( $value, $this->x_axis ) ) {
-            $this->x_axis[] = $value;
-        }
-    }
-
-    /**
-     * @param $value
-     */
-    public function register_y_axis( $value ){
-        if ( ! in_array( $value, $this->y_axis ) ) {
-            $this->y_axis[] = $value;
-        }
-    }
-
-    /**
-     * If you pass in a closure for $value, we'll provide you the previous
-     * value and let your function determine the next value.
-     *
-     * We do not force the x and y axis values to be registered before you
-     * put them here. So, you can register all the data you want, but if you
-     * do not register the corresponding x and y values, then the data will
-     * be largely ignored when you export to a record set.
-     *
-     * @param $x
-     * @param $y
-     * @param $value
-     * @param bool $register_axises
-     */
-    public function set_point( $x, $y, $value, $register_axises = false ) {
-
-        if ( $register_axises ) {
-            $this->register_x_axis( $x );
-            $this->register_y_axis( $y );
-        }
-
-        // checking instanceof \Closure would be similar...
-        if ( is_object( $value ) && is_callable( $value ) ) {
-            $this->matrix[$x][$y] = call_user_func( $value, $this->get_point( $x, $y, null ) );
-        } else {
-            $this->matrix[$x][$y] = $value;
-        }
-    }
-
-    /**
-     * @param $x
-     * @param $y
+     * @param $row_key
+     * @param $column_key
      * @param null $default
      * @return mixed|null
      */
-    public function get_point( $x, $y, $default = null ) {
-        return isset( $this->matrix[$x][$y] ) ? $this->matrix[$x][$y] : $default;
+    public function get( $row_key, $column_key, $default = null ) {
+        return isset( $this->matrix[$row_key][$column_key] ) ? $this->matrix[$row_key][$column_key] : $default;
     }
 
     /**
-     * Sometimes you can use this as the 3rd param of set_point, which may
-     * save you a line or two of code.
-     *
-     * @param int $increment_by
-     * @return \Closure
+     * @param $row_key
+     * @param $column_key
+     * @param $value
      */
-    public function get_incrementor( $increment_by = 1 ) {
-        return function( $prev ) use( $increment_by ) {
-            $prev = $prev ? $prev : 0;
-            $prev += $increment_by;
-            return $prev;
-        };
+    public function set( $row_key, $column_key, $value ) {
+
+        // if we properly register rows and columns, then there is no need for isset checks below.
+        $this->register_row( $row_key );
+        $this->register_column( $column_key );
+
+        // set the value according to a function or value passed in
+        if ( is_object( $value ) && is_callable( $value ) ) {
+            $this->matrix[$row_key][$column_key] = call_user_func( $value, $this->matrix[$row_key][$column_key] );
+        } else {
+            $this->matrix[$row_key][$column_key] = $value;
+        }
     }
 
     /**
-     * Export to an array of arrays which includes the x and y axis values.
      *
-     * @param string $origin
-     * @return array
+     * todo: its unlikely but possible we'll have numeric array keys. If so, we may need to re-index the array after deletion.
+     *
+     * @param $row_key
      */
-    public function export_record_set( $origin = "" ) {
+    public function delete_row( $row_key ) {
+        unset( $this->matrix[$row_key] );
+    }
 
-        $ret = [];
+    /**
+     * @param $column_key
+     */
+    public function delete_column( $column_key ) {
+        foreach ( $this->matrix as $row_key => $vector ) {
+            // do not check isset because then we'll fail to remove null values.
+            unset( $this->matrix[$row_key][$column_key] );
+        }
+    }
 
-        foreach( $this->y_axis as $y ) {
+    /**
+     * Adds a row to the matrix with null values.
+     *
+     * @param $row_key
+     */
+    private function register_row( $row_key ) {
 
-            $row = [];
-
-            foreach ( $this->x_axis as $x ) {
-                $row[] = $this->get_point( $x, $y );
-            }
-
-            $ret[] = array_merge( [ $y ], $row );
+        if ( isset( $this->matrix[$row_key] ) ) {
+            return;
         }
 
-        // prepend the x-axis
-        return array_merge( [ array_merge( [ $origin ], $this->x_axis ) ], $ret );
+        $empty_row = [];
+
+        // nested loop to assemble column indexes from all columns
+        foreach ( $this->matrix as $r => $vector ) {
+            foreach ( $vector as $c => $p ) {
+                if ( ! array_key_exists( $c, $empty_row ) ) {
+                    $empty_row[$c] = null;
+                }
+            }
+        }
+
+        $this->matrix[$row_key] = $empty_row;
     }
 
     /**
-     * @param $key
-     * @return array|mixed
+     * Adds a column to the matrix with null values.
+     *
+     * @param $column_key
      */
-    public function get_row( $y ) {
-        return isset( $this->matrix[$y] ) ? $this->matrix[$y] : [];
+    private function register_column( $column_key ) {
+        foreach ( $this->matrix as $r => $vector ) {
+            if ( ! array_key_exists( $column_key, $vector ) ) {
+                $this->matrix[$r][$column_key] = null;
+            }
+        }
     }
 
     /**
-     * @param $key
      * @return array
      */
-    public function get_column( $x ){
+    public function get_column_keys(){
+        return array_keys( $this->get_first_row() );
+    }
+
+    /**
+     * @return array
+     */
+    public function get_row_keys(){
+        return array_keys( $this->get_first_column() );
+    }
+
+    /**
+     * @param $row_key
+     * @return array|mixed
+     */
+    public function get_row( $row_key ) {
+        return isset( $this->matrix[$row_key] ) ? $this->matrix[$row_key] : [];
+    }
+
+    /**
+     * @param $column_key
+     * @return array
+     */
+    public function get_col( $column_key ) {
 
         $ret = [];
 
-        foreach ( $this->matrix as $_y => $arr ) {
-            foreach ( $arr as $_x => $point ) {
-                if ( $x == $_x ) {
-                    $ret[$_y] = $point;
-                }
+        foreach ( $this->matrix as $row_key => $vector ) {
+            // array_key_exists MUST be used over isset()
+            if ( array_key_exists( $column_key, $vector ) ) {
+                $ret[$row_key] = $vector[$column_key];
+            }
+        }
+
+        // ensure the return value is not something unexpected.
+        if ( count( $this->matrix ) !== count( $ret ) ) {
+            // this will not occur under normal circumstances.
+            return [];
+        }
+
+        return $ret;
+    }
+
+    /**
+     * Note that all columns should have the same count/indexes/structure.
+     *
+     * @return array
+     */
+    public function get_first_column(){
+
+        $ret = [];
+
+        // we can do this using a combination of other functions such as get_row_keys,
+        // but then we run into infinite loop scenarios.
+        foreach ( $this->matrix as $row_index => $vector ) {
+            foreach ( $vector as $col_index => $point ) {
+                // get the first column and then break;
+                $ret[$row_index] = $point;
+                break 1;
             }
         }
 
@@ -185,25 +201,208 @@ Class Matrix{
     }
 
     /**
-     * Invert x/y axis because we can...
+     * Note that all rows should have the same count/indexes/structure.
      *
-     * // todo: test
+     * @return array|mixed
      */
-    public function invert(){
+    public function get_first_row(){
 
-        $self = new static();
-        $self->x_axis = $this->y_axis;
-        $self->y_axis = $this->x_axis;
-
-        foreach ( $this->matrix as $x_axis => $y_values ) {
-            foreach ( $y_values as $y_axis => $point ) {
-                $self->set_point( $y_axis, $x_axis, $point, false );
-            }
+        foreach ( $this->matrix as $row_key => $vector ) {
+            return $vector;
         }
 
-        $this->x_axis = $self->x_axis;
-        $this->y_axis = $self->y_axis;
-        $this->matrix = $self->matrix;
-        return $this;
+        return [];
+    }
+
+    /**
+     * @return array
+     */
+    public function get_matrix(){
+        return $this->matrix;
+    }
+
+    /**
+     * I will allow this public method in case there are things which my methods do not cover.
+     *
+     * P.s. you could use this to re-order the matrix.
+     *
+     * @param array $matrix
+     */
+    public function set_matrix( array $matrix ){
+        $this->matrix = $matrix;
+    }
+
+    /**
+     * @return array
+     */
+    public function get_dimensions(){
+        return [ count( $this->get_row_keys()), count($this->get_column_keys()) ];
+    }
+
+    /**
+     * The callback accepts a numerically indexed array of keys
+     * and should return an array of the same format (but possibly
+     * in a different order).
+     *
+     * Passing in empty array -> no-op.
+     *
+     * @param callable $callback
+     */
+    public function sort_rows( callable $callback ){
+        // passing in a non-array will result in an error.
+        // For now, not failing silently.
+        $this->apply_row_sort( call_user_func( $callback, $this->get_row_keys() ) );
+    }
+
+    /**
+     * @param callable $callback
+     */
+    public function sort_columns( callable $callback ){
+        $this->apply_column_sort( call_user_func( $callback, $this->get_row_keys() ) );
+    }
+
+    /**
+     * Applies a sort order to the rows according to what you pass in.
+     *
+     * ie. $keys = [ 'key_1', 'key_2', 'key_3' ].
+     *
+     * Keys not passed in will be appended with their current order maintained.
+     *
+     * Keys passed in that are not in the data are ignored.
+     *
+     * @param array $keys
+     * @return array
+     */
+    public function apply_row_sort( array $keys ){
+        $this->matrix = self::apply_sort_order_to_data( $keys, $this->matrix );
+    }
+
+    /**
+     * @see apply_row_sort
+     *
+     * @param array $keys
+     */
+    public function apply_column_sort( array $keys ) {
+        foreach ( $this->matrix as $r => $vector ) {
+            $this->matrix[$r] = self::apply_sort_order_to_data( $keys, $vector );
+        }
+    }
+
+    /**
+     * @param array $ordered_keys
+     * @param array $data
+     * @return array
+     */
+    private static function apply_sort_order_to_data( array $ordered_keys, array $data ) {
+
+        $k = array_keys( $data );
+
+        // strips invalid keys
+        $_ordered_keys = array_intersect( $ordered_keys, $k );
+
+        // append missing keys from $_ordered_keys onto the end.
+        $_ordered_keys = array_unique( array_merge( $_ordered_keys, $k ) );
+
+        assert( count( $_ordered_keys ) === count( $k ) );
+
+        $ret = [];
+
+        foreach ( $_ordered_keys as $key ) {
+            $ret[$key] = $data[$key];
+        }
+
+        return $ret;
+    }
+
+    /**
+     * Adds row and column headings and returns an array of arrays.
+     *
+     * This might be the format you need to pass into a function that
+     * renders an HTML table (for me it is anyways).
+     *
+     * Is this better off static since it returns an array and does not return nor mutate $this?
+     *
+     * @param string $origin_label
+     * @param array $row_labels
+     * @param array $column_labels
+     * @param string $row_heading_key
+     * @param string $column_heading_key
+     * @return array
+     */
+    public function convert_to_record_set_with_headings( $origin_label = "", $row_labels = [], $column_labels = [], $row_heading_key = self::DEFAULT_HEADING_KEY, $column_heading_key = self::DEFAULT_HEADING_KEY ) {
+
+        // we could do this with a bunch of foreach loops and some interesting looking array merges,
+        // or, we can a complicated mix of the methods we already built. To be honest, it's not
+        // super easy to follow using the latter method, but, that's what I did.
+
+        $self = clone $this;
+
+        // insert the header row (at the end)
+        foreach ( $self->get_column_keys() as $column_key ) {
+            $self->set( $row_heading_key, $column_key, isset( $column_labels[$column_key] ) ? $column_labels[$column_key] : $column_key );
+        }
+
+        // put the header row at the start of all rows.
+        $self->sort_rows( function() use( $row_heading_key ){
+            return [ $row_heading_key ];
+        });
+
+        // insert the column heading into each column (at the end)
+        foreach ( $self->get_row_keys() as $row_key ) {
+            $self->set( $row_key, $column_heading_key, isset( $row_labels[$row_key] ) ? $row_labels[$row_key] : $row_key );
+        }
+
+        // put the column headings at the start of each column.
+        $self->sort_columns( function() use( $column_heading_key ){
+            return [ $column_heading_key ];
+        });
+
+        // now fix the (0,0) coordinate.
+        $self->set( $row_heading_key, $column_heading_key, $origin_label );
+
+        // return an array not the instance for now.
+        return $self->matrix;
+    }
+
+    /**
+     * @param int $plus_equals
+     * @return \Closure
+     */
+    public function get_incrementer( $plus_equals = 1 ){
+        return function( $prev ) use( $plus_equals ) {
+            $prev = $prev ? $prev : 0;
+            $prev += $plus_equals;
+            return $prev;
+        };
+    }
+
+    /**
+     * Things make a lot more sense if you refer to this.
+     *
+     * @return array
+     */
+    private static function _example_matrix(){
+        return [
+            'row_key_1' => [
+                'column_key_1' => 11,
+                'column_key_2' => 12,
+                'column_key_3' => 13,
+            ],
+            'row_key_2' => [
+                'column_key_1' => 21,
+                'column_key_2' => 22,
+                'column_key_3' => 23,
+            ],
+            'row_key_3' => [
+                'column_key_1' => 31,
+                'column_key_2' => 32,
+                'column_key_3' => 33,
+            ],
+            'row_key_4' => [
+                'column_key_1' => 41,
+                'column_key_2' => 42,
+                'column_key_3' => 43,
+            ]
+        ];
     }
 }
