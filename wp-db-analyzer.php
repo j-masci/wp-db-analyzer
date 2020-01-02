@@ -49,15 +49,14 @@ Class WP_DB_Analyzer_Plugin
     private static $instance;
 
     /**
-     * Helps prevent including files twice.
+     * Helps prevent including (php) files twice.
      *
      * @var array
      */
     private $included_steps = [];
 
     /**
-     * Preventing enqueueing scripts twice (which, actually wouldn't hurt
-     * much since WordPress would also catch this.)
+     * Helps prevent enqueuing scripts/styles twice.
      *
      * @var bool
      */
@@ -108,17 +107,22 @@ Class WP_DB_Analyzer_Plugin
     public function admin_menu()
     {
         $cap = 'manage_options';
-        $menu_slug = $this->get_setting( 'menu_slug' );
+        $menu_slug = $this->settings['menu_slug'];
         $menu_slug_settings = $menu_slug . '-settings';
 
         add_menu_page( __("Database Analyzer",'wpda'), __("Database Analyzer",'wpda'), $cap, $menu_slug, false, 'dashicons-visibility', $this->settings['menu_position'] );
 
         add_submenu_page( $menu_slug, __('Analyzer','wpda'), __('Analyzer','wpda'), $cap, $menu_slug, function(){
-            $this->include_template( 'analyzer.php' );
+            $this->includes( 2 );
+            $this->enqueue_scripts();
+            include $this->settings['path'] . '/tmpl/analyzer.php';
+
         } );
 
         add_submenu_page( $menu_slug, __('Settings','wpda'), __('Settings','wpda'), $cap, $menu_slug_settings, function(){
-            $this->include_template( 'settings.php' );
+            $this->includes( 2 );
+            $this->enqueue_scripts();
+            include $this->settings['path'] . '/tmpl/settings.php';
         } );
     }
 
@@ -133,17 +137,6 @@ Class WP_DB_Analyzer_Plugin
     // public function admin_init(){}
 
     /**
-     * Load dependencies, scripts/style, and include a file in the /tmpl directory.
-     *
-     * @param $filename
-     */
-    public function include_template( $filename ) {
-        $this->includes( 2 );
-        $this->enqueue_scripts();
-        include $this->settings['path'] . "/tmpl/$filename";
-    }
-
-    /**
      * Register/enqueue scripts/styles. You can call many times.
      *
      * Not hooked onto 'admin_enqueue_scripts'. Lazy loaded instead.
@@ -155,8 +148,9 @@ Class WP_DB_Analyzer_Plugin
         }
 
         $this->scripts_enqueued = true;
+        $url = $this->settings['url'];
 
-        wp_enqueue_style( 'wp_database_analyzer_css', $this->get_url() . '/css/master.css', [], self::VERSION );
+        wp_enqueue_style( 'wp_database_analyzer_css', $url . '/css/master.css', [], self::VERSION );
     }
 
     /**
@@ -188,6 +182,7 @@ Class WP_DB_Analyzer_Plugin
                 break;
             case 2:
 
+                include $p . '/inc/utility-functions.php';
                 include $p . '/inc/sql.php';
                 include $p . '/inc/tables.php';
                 include $p . '/inc/matrix.php';

@@ -16,6 +16,7 @@ function render_table( $columns, array $rows, array $args = [] ){
         'show_no_results' => false,
         'no_results_message' => "No Results",
         'add_class' => [],
+        'skip_header' => false,
         'get_table_cell_tag' => null,
         'sanitize_column_key' => function( $in ) {
             return esc_attr( $in );
@@ -52,6 +53,12 @@ function render_table( $columns, array $rows, array $args = [] ){
     // Validate $columns. Auto generate from $rows if null. Ensure that we
     // validate $rows before running this.
     $columns = call_user_func( function() use( $columns, $rows, $args ) {
+
+        if ( $args['skip_header'] ) {
+            // actually, don't do this. Allow the columns to be auto generated,
+            // because that's what we loop through to print html.
+            // return [];
+        }
 
         $ret = [];
 
@@ -99,16 +106,19 @@ function render_table( $columns, array $rows, array $args = [] ){
 
         echo '<table>';
 
-        echo '<thead>';
-        echo '<tr>';
+        if ( ! $args['skip_header'] ) {
 
-        // note: columns were already sanitized
-        foreach ( $columns as $column_key => $column_label ) {
-            echo '<th class="col-' . $column_key . '">' . $column_label . '</th>';
+            echo '<thead>';
+            echo '<tr>';
+
+            // note: columns were already sanitized
+            foreach ( $columns as $column_key => $column_label ) {
+                echo '<th class="col-' . $column_key . '">' . $column_label . '</th>';
+            }
+
+            echo '</tr>';
+            echo '</thead>';
         }
-
-        echo '</tr>';
-        echo '</thead>';
 
         echo '<tbody>';
 
@@ -134,10 +144,12 @@ function render_table( $columns, array $rows, array $args = [] ){
 
                     $tag = in_array( $tag, [ 'td', 'th' ] ) ? $tag : 'td';
 
-                    // column key has already been sanitized
-                    echo '<td class="col-' . $column_key . '">';
+                    // $column_key was already sanitized.
+                    $col_class = $args['skip_header'] ? '' : 'col-' . $column_key;
+
+                    echo '<' . $tag . ' class="' . $col_class . '">';
                     echo $args['sanitize_cell']( $cell, $column_key, $row );
-                    echo '</td>';
+                    echo '</' . $tag . '>';
                 }
 
                 echo '</tr>';
