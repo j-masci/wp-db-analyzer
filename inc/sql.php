@@ -13,34 +13,6 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 Class SQL
 {
-
-    public static function transients_report(){
-
-        // SELECT *  FROM `wpjm_options` WHERE `option_name` LIKE '_transient_%' AND `option_name` NOT LIKE '_transient_timeout_%'
-        //
-
-        $t_values = get_transients();
-        $t_timeouts = get_transient_timeouts();
-
-        // todo: timezone?
-        $now = time();
-
-        $matrix = new Matrix();
-
-        foreach ( $t_values as $t_name => $t_obj ) {
-            $t_expires = isset( $t_timeouts[$t_name]->option_value ) ? (int) $t_timeouts[$t_name]->option_value : 0;
-            $hours = $t_expires > 0 ? (int) floor( ( $t_expires - $now ) / 3600 ) : 0;
-            $matrix->set( $hours, "Number of Transients", $matrix->get_incrementer() );
-        }
-
-        $matrix->sort_rows( function( $row_keys ) {
-            sort( $row_keys, SORT_NUMERIC );
-            return $row_keys;
-        });
-
-        return $matrix;
-    }
-
     /**
      * @return Matrix
      */
@@ -54,6 +26,10 @@ Class SQL
         foreach ($posts as $post) {
             $matrix->set( $post->post_status, $post->post_type, $matrix->get_incrementer() );
         }
+
+        $matrix->sort_columns( function( $keys ) {
+            return [ 'page', 'post', 'attachment' ];
+        } );
 
         return $matrix;
     }
@@ -72,13 +48,17 @@ Class SQL
 
         $rows = $wpdb->get_results( $q );
 
-        $ret = new Matrix();
+        $matrix = new Matrix();
 
         foreach ($rows as $row) {
-            $ret->set( @$row->post_type, format_date_time_string( @$row->post_date, "Y-m-d" ), @$row->count );
+            $matrix->set( @$row->post_type, format_date_time_string( @$row->post_date, "Y-m-d" ), @$row->count );
         }
 
-        return $ret;
+        $matrix->sort_rows( function( $keys ) {
+            return [ 'page', 'post', 'attachment' ];
+        } );
+
+        return $matrix;
     }
 
     /**
@@ -97,12 +77,53 @@ Class SQL
 
         $rows = $wpdb->get_results( $q );
 
-        $ret = new Matrix();
+        $matrix = new Matrix();
 
         foreach ($rows as $row) {
-            $ret->set( $row->meta_key, $row->post_type, $row->count );
+            $matrix->set( $row->meta_key, $row->post_type, $row->count );
         }
 
-        return $ret;
+        $matrix->sort_columns( function( $keys ) {
+            return [ 'page', 'post', 'attachment' ];
+        } );
+
+        return $matrix;
+    }
+
+    /**
+     * Count transients grouped by expiry time.
+     *
+     * @return Matrix
+     */
+    public static function transients_report(){
+
+        // SELECT *  FROM `wpjm_options` WHERE `option_name` LIKE '_transient_%' AND `option_name` NOT LIKE '_transient_timeout_%'
+        //
+
+        $t_values = get_transients();
+        $t_timeouts = get_transient_timeouts();
+
+        // todo: timezone?
+        $now = time();
+
+        $matrix = new Matrix();
+
+        foreach ( $t_values as $t_name => $t_obj ) {
+
+            // timestamp when transient expires
+            $t_expires = isset( $t_timeouts[$t_name]->option_value ) ? (int) $t_timeouts[$t_name]->option_value : 0;
+
+            // number of hours until this transient expires.
+            $hours = $t_expires > 0 ? (int) floor( ( $t_expires - $now ) / 3600 ) : 0;
+
+            $matrix->set( $hours, "Number of Transients", $matrix->get_incrementer() );
+        }
+
+        $matrix->sort_rows( function( $keys ) {
+            sort( $keys, SORT_NUMERIC );
+            return $keys;
+        });
+
+        return $matrix;
     }
 }
