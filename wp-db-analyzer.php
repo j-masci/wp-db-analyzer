@@ -124,6 +124,13 @@ Class WP_DB_Analyzer_Plugin
             $this->enqueue_scripts();
             include $this->settings['path'] . '/tmpl/settings.php';
         } );
+
+        add_submenu_page( $menu_slug, __('Examples','wpda'), __('Examples','wpda'), $cap, 'wp-db-analyzer-examples', function(){
+            $this->includes( 2 );
+            $this->enqueue_scripts();
+            include $this->settings['path'] . '/tmpl/examples.php';
+
+        } );
     }
 
     /**
