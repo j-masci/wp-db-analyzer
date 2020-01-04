@@ -193,6 +193,8 @@ Class WP_DB_Analyzer_Plugin
                 include $p . '/inc/sql.php';
                 include $p . '/inc/tables.php';
                 include $p . '/inc/matrix.php';
+                include $p . '/inc/report.php';
+                include $p . '/inc/reports.php';
                 break;
             default:
         }
