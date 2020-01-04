@@ -46,6 +46,32 @@ Class Matrix{
     private $matrix = [];
 
     /**
+     * Example of the structure of our data.
+     */
+//    private static $example_matrix = [
+//        'row_key_1' => [
+//            'column_key_1' => "Point 1-1",
+//            'column_key_2' => 12,
+//            'column_key_3' => 13,
+//        ],
+//        'row_key_2' => [
+//            'column_key_1' => 21,
+//            'column_key_2' => 22,
+//            'column_key_3' => 23,
+//        ],
+//        'row_key_3' => [
+//            'column_key_1' => 31,
+//            'column_key_2' => 32,
+//            'column_key_3' => 33,
+//        ],
+//        'row_key_4' => [
+//            'column_key_1' => 41,
+//            'column_key_2' => 42,
+//            'column_key_3' => 43,
+//        ]
+//    ];
+
+    /**
      * @param $row_key
      * @param $column_key
      * @param null $default
@@ -258,7 +284,7 @@ Class Matrix{
      * @param callable $callback
      */
     public function sort_columns( callable $callback ){
-        $this->apply_column_sort( call_user_func( $callback, $this->get_row_keys() ) );
+        $this->apply_column_sort( call_user_func( $callback, $this->get_column_keys() ) );
     }
 
     /**
@@ -301,7 +327,7 @@ Class Matrix{
         $_ordered_keys = array_intersect( $ordered_keys, $k );
 
         // append missing keys from $_ordered_keys onto the end.
-        $_ordered_keys = array_unique( array_merge( $_ordered_keys, $k ) );
+        $_ordered_keys = array_unique( array_merge( array_values( $_ordered_keys ), $k ) );
 
         assert( count( $_ordered_keys ) === count( $k ) );
 
@@ -332,7 +358,7 @@ Class Matrix{
     public function convert_to_record_set_with_headings( $origin_label = "", $row_labels = [], $column_labels = [], $row_heading_key = self::DEFAULT_HEADING_KEY, $column_heading_key = self::DEFAULT_HEADING_KEY ) {
 
         // we could do this with a bunch of foreach loops and some interesting looking array merges,
-        // or, we can a complicated mix of the methods we already built. To be honest, it's not
+        // or, we can use a complicated mix of the methods we already built. To be honest, it's not
         // super easy to follow using the latter method, but, that's what I did.
 
         $self = clone $this;
@@ -365,6 +391,8 @@ Class Matrix{
     }
 
     /**
+     * Sometimes we use this as one of the arguments for $this->set().
+     *
      * @param int $plus_equals
      * @return \Closure
      */
@@ -374,35 +402,5 @@ Class Matrix{
             $prev += $plus_equals;
             return $prev;
         };
-    }
-
-    /**
-     * Things make a lot more sense if you refer to this.
-     *
-     * @return array
-     */
-    private static function _example_matrix(){
-        return [
-            'row_key_1' => [
-                'column_key_1' => 11,
-                'column_key_2' => 12,
-                'column_key_3' => 13,
-            ],
-            'row_key_2' => [
-                'column_key_1' => 21,
-                'column_key_2' => 22,
-                'column_key_3' => 23,
-            ],
-            'row_key_3' => [
-                'column_key_1' => 31,
-                'column_key_2' => 32,
-                'column_key_3' => 33,
-            ],
-            'row_key_4' => [
-                'column_key_1' => 41,
-                'column_key_2' => 42,
-                'column_key_3' => 43,
-            ]
-        ];
     }
 }
