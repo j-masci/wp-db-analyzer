@@ -27,6 +27,9 @@ Class SQL
             $matrix->set( $post->post_status, $post->post_type, $matrix->get_incrementer() );
         }
 
+        $matrix->set_row_totals( $matrix::get_array_summer() );
+        $matrix->set_column_totals( $matrix::get_array_summer() );
+
         $matrix->sort_columns( function( $keys ) {
             return [ 'page', 'post', 'attachment' ];
         } );
@@ -53,6 +56,9 @@ Class SQL
         foreach ($rows as $row) {
             $matrix->set( @$row->post_type, format_date_time_string( @$row->post_date, "Y-m-d" ), @$row->count );
         }
+
+        $matrix->set_row_totals( $matrix::get_array_summer() );
+        $matrix->set_column_totals( $matrix::get_array_summer() );
 
         $matrix->sort_rows( function( $keys ) {
             return [ 'page', 'post', 'attachment' ];
@@ -82,6 +88,9 @@ Class SQL
         foreach ($rows as $row) {
             $matrix->set( $row->meta_key, $row->post_type, $row->count );
         }
+
+        $matrix->set_row_totals( $matrix::get_array_summer() );
+        $matrix->set_column_totals( $matrix::get_array_summer() );
 
         $matrix->sort_columns( function( $keys ) {
             return [ 'page', 'post', 'attachment' ];
@@ -116,12 +125,21 @@ Class SQL
             // number of hours until this transient expires.
             $hours = $t_expires > 0 ? (int) floor( ( $t_expires - $now ) / 3600 ) : 0;
 
-            $matrix->set( $hours, "Number of Transients", $matrix->get_incrementer() );
+            $matrix->set( $hours, "transients_count", $matrix->get_incrementer() );
         }
 
         $matrix->sort_rows( function( $keys ) {
             sort( $keys, SORT_NUMERIC );
             return $keys;
+        });
+
+        $matrix->set( "total_count", "transients_count", array_reduce( $matrix->get_column( 'transients_count' ), function( $carry, $count ){
+            return $carry+= $count;
+        }, 0 ) );
+
+        $matrix->sort_rows( function( $keys ){
+            unset( $keys['total'] );
+            return array_merge( $keys, [ 'total' ] );
         });
 
         return $matrix;

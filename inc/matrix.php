@@ -25,6 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 Class Matrix{
 
     const DEFAULT_HEADING_KEY = "__heading";
+    const DEFAULT_TOTAL_KEY = "__total";
 
     /**
      * An array of arrays.
@@ -184,7 +185,7 @@ Class Matrix{
      * @param $column_key
      * @return array
      */
-    public function get_col( $column_key ) {
+    public function get_column($column_key ) {
 
         $ret = [];
 
@@ -216,7 +217,7 @@ Class Matrix{
         // we can do this using a combination of other functions such as get_row_keys,
         // but then we run into infinite loop scenarios.
         foreach ( $this->matrix as $row_index => $vector ) {
-            foreach ( $vector as $col_index => $point ) {
+            foreach ( $vector as $column_index => $point ) {
                 // get the first column and then break;
                 $ret[$row_index] = $point;
                 break 1;
@@ -256,6 +257,62 @@ Class Matrix{
      */
     public function set_matrix( array $matrix ){
         $this->matrix = $matrix;
+    }
+
+    /**
+     * Returns a function that sums an array and accepts the arguments
+     * given in the callback for set_row_totals/set_column_totals.
+     *
+     * @return \Closure
+     */
+    public static function get_array_summer(){
+        return function( $arr, $key ) {
+            return array_sum( $arr );
+        };
+    }
+
+    /**
+     * Gives you the entire row which you can use to generate a total.
+     *
+     * Once the totals are generated they are more or less no different
+     * from the other data points, except for their key. Be aware of this
+     * if you call this more than once for some reason.
+     *
+     * @param callable $callback
+     * @param string $column_key
+     */
+    public function set_row_totals( callable $callback, $column_key = self::DEFAULT_TOTAL_KEY ){
+
+        // run the callback for each row
+        foreach ( $this->get_row_keys() as $key ) {
+            $value = $callback( $this->get_row( $key ), $key );
+            $this->set( $key, $column_key, $value );
+        }
+
+        // put the column at the end
+        $this->sort_columns( function( $keys ) use( $column_key ){
+            unset( $keys[$column_key] );
+            return array_merge( $keys, [ $column_key ] );
+        });
+    }
+
+    /**
+     * @param callable $callback
+     * @param string $row_key
+     */
+    public function set_column_totals( callable $callback, $row_key = self::DEFAULT_TOTAL_KEY ){
+
+        // run the callback for each column
+        foreach ( $this->get_column_keys() as $key ) {
+            $value = $callback( $this->get_column( $key ), $key );
+            $this->set( $row_key, $key, $value );
+        }
+
+        // put the row at the bottom
+        $this->sort_rows( function( $keys ) use( $row_key ){
+            unset( $keys[$row_key] );
+            return array_merge( $keys, [ $row_key ] );
+        });
     }
 
     /**
