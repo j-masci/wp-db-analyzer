@@ -16,9 +16,8 @@ global $wpdb;
 
     <?php
 
-    foreach ( Report_IDs::build_reports() as $report ) {
-        Report::prepare_report( $report );
-        echo Report::render_report( $report );
+    foreach ( Reports::get_all() as $report ) {
+        echo Reports::render( $report );
     }
 
     ?>
