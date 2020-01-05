@@ -100,6 +100,55 @@ Class SQL
     }
 
     /**
+     * @return Matrix
+     */
+    public static function user_meta_report(){
+
+        global $wpdb;
+
+        // hit post meta table once via sql then we'll loop through it in php
+        $user_meta = $wpdb->get_results( "SELECT user_id, meta_key FROM {$wpdb->usermeta} ORDER BY umeta_id" );
+
+        $user_meta_matrix = new Matrix();
+
+        foreach ( $user_meta as $user_meta_record ) {
+            $user_meta_matrix->set( $user_meta_record->user_id, $user_meta_record->meta_key, null );
+        }
+
+        $matrix = new Matrix();
+
+        // passing in an empty array to this returns no users instead of all of them.
+        $users = new \WP_User_Query( [
+            'nothing' => 'nothing'
+        ]);
+
+        // todo: this loop could get too large. Probably some SQL solution but the issue we have to address is the serialized user roles.
+        if ( ! empty( $users->get_results() ) ) {
+            foreach ( $users->get_results() as $user ) {
+                if ( is_array( $user->roles ) ) {
+
+                    // most users have one role but its possible to have more than 1.
+                    // the table data will look odd if users have more than 1 role.
+                    foreach ( $user->roles as $role ) {
+                        foreach ( $user_meta_matrix->get_row( $user->ID ) as $meta_key => $nothing ) {
+                            $matrix->set( $meta_key, $role, $matrix->get_incrementer() );
+                        }
+                    }
+                }
+            }
+        }
+
+        $matrix->set_row_totals( $matrix::get_array_summer() );
+        $matrix->set_column_totals( $matrix::get_array_summer() );
+
+        $matrix->sort_columns( function( $keys ) {
+            return [ 'administrator', 'editor', 'author', 'contributor', 'subscriber' ];
+        });
+
+        return $matrix;
+    }
+
+    /**
      * Count transients grouped by expiry time.
      *
      * @return Matrix

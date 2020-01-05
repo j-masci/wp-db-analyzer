@@ -17,6 +17,22 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 Class Reports{
 
     /**
+     * id: choose a unique ID,
+     *
+     * tables: an array of database tables, next to which, we'll print the report title for a user to select.
+     *
+     * title: give it a title so we can print the title when a user is selecting reports.
+     *
+     * render: do all the expensive work here, and echo (don't return) the HTML for displaying the report.
+     */
+//    public static $example_report_array = [
+//        'id' => 'abc123',
+//        'tables' => [ $wpdb->options ],
+//        'title' => 'Example Report',
+//        'render' => function( array $self ){},
+//    ];
+
+    /**
      * Invokes the render index of an array and returns what it outputs.
      *
      * Your render callback should echo the HTML, but this method will return it.
@@ -55,9 +71,12 @@ Class Reports{
      */
     public static function get_all(){
 
+        global $wpdb;
+
         $reports = [];
 
         $reports[Report_IDs::POST_STATUS] = [
+            'tables' => [ $wpdb->posts ],
             'title' => 'Post Status Report',
             'render' => function( $self ){
                 self::print_title( $self );
@@ -67,7 +86,8 @@ Class Reports{
             }
         ];
 
-        $reports[Report_IDs::META_KEYS] = [
+        $reports[Report_IDs::POST_META] = [
+            'tables' => [ $wpdb->postmeta ],
             'title' => 'Post Meta Report',
             'render' => function( $self ){
                 self::print_title( $self );
@@ -78,6 +98,7 @@ Class Reports{
         ];
 
         $reports[Report_IDs::POST_DATES] = [
+            'tables' => [ $wpdb->posts ],
             'title' => 'Post Published Date Report',
             'render' => function( $self ){
                 self::print_title( $self );
@@ -88,10 +109,22 @@ Class Reports{
         ];
 
         $reports[Report_IDs::TRANSIENT_TIMEOUTS] = [
+            'tables' => [ $wpdb->options ],
             'title' => 'Transient Timeout Report',
             'render' => function( $self ){
                 self::print_title( $self );
                 echo render_table( null, SQL::transients_report()->convert_to_record_set_with_headings( "Hours Until Expiry" ), [
+                    'skip_header' => true,
+                ] );
+            }
+        ];
+
+        $reports[Report_IDs::USER_META] = [
+            'tables' => [ $wpdb->options ],
+            'title' => 'User Meta Report',
+            'render' => function( $self ){
+                self::print_title( $self );
+                echo render_table( null, SQL::user_meta_report()->convert_to_record_set_with_headings(), [
                     'skip_header' => true,
                 ] );
             }
@@ -129,9 +162,10 @@ Class Reports{
 Class Report_IDs{
 
     const POST_STATUS = 'post_status';
-    const META_KEYS = 'meta_keys';
+    const POST_META = 'post_meta';
     const POST_DATES = 'post_dates';
     const TRANSIENT_TIMEOUTS = 'transient_timeouts';
+    const USER_META = 'user_meta';
 
     public static function get_all(){
         $r = new \ReflectionClass(self::class);
