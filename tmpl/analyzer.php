@@ -45,7 +45,14 @@ $tables = $wpdb->get_results( "SHOW TABLES" );
     echo render_table( null, $html_table_data );
 
     foreach ( $reports as $report ) {
-        echo Reports::render( $report );
+
+        ?>
+
+        <div class="wpdba-report" data-name="<?= esc_attr( $report['id'] ); ?>">
+            <?= Reports::render( $report ); ?>
+        </div>
+
+        <?php
     }
 
     ?>

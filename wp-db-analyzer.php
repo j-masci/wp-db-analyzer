@@ -18,6 +18,8 @@
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+namespace WP_DB_Analyzer;
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 define('WP_DB_ANALYZER_DIR', dirname(__FILE__));
@@ -64,7 +66,6 @@ Class WP_DB_Analyzer_Plugin
 
     /**
      * WP_DB_Analyzer_Plugin constructor.
-     * @throws Exception
      */
     public function __construct()
     {
@@ -74,20 +75,31 @@ Class WP_DB_Analyzer_Plugin
         $this->settings = [
             'menu_slug' => 'wp-database-analyzer',
             'menu_position' => 90,
-            'path' => dirname( __FILE__ ),
+            'ajax_action' => 'wpdba_ajax',
+            'nonce_secret' => 'wpdba_secret_12371236123',
+            // rtrim might be redundant
+            'path' => rtrim( dirname( __FILE__ ), '/' ),
             'dir' => 'wp-database-analyzer',
-            'url' => plugins_url( 'wp-database-analyzer' ),
+            'url' => rtrim( plugins_url( 'wp-database-analyzer' ), '/' ),
         ];
 
         add_action('admin_menu', [$this, 'admin_menu']);
-
         // add_action('init', [$this, 'init']);
         // add_action('admin_init', [$this, 'admin_init']);
+
+        add_action( "wp_ajax_{$this->settings['ajax_action']}", [ $this, 'wp_ajax' ] );
+    }
+
+    /**
+     * Hooked to WP ajax
+     */
+    public function wp_ajax(){
+        // just include the global ajax file.
+        include $this->settings['path'] . '/ajax/_global.php';
     }
 
     /**
      * @return WP_DB_Analyzer_Plugin|null
-     * @throws Exception
      */
     public static function get_instance(){
 
@@ -158,6 +170,8 @@ Class WP_DB_Analyzer_Plugin
         $url = $this->settings['url'];
 
         wp_enqueue_style( 'wp_database_analyzer_css', $url . '/css/master.css', [], self::VERSION );
+
+        wp_enqueue_style( 'wp_database_analyzer_js', $url . '/js/main.js', [], self::VERSION );
     }
 
     /**

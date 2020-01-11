@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  */
 Class SQL
 {
+
     /**
      * @return Matrix
      */

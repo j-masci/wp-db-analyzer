@@ -120,7 +120,7 @@ Class Reports{
         ];
 
         $reports[Report_IDs::USER_META] = [
-            'tables' => [ $wpdb->options ],
+            'tables' => [ $wpdb->usermeta ],
             'title' => 'User Meta Report',
             'render' => function( $self ){
                 self::print_title( $self );
@@ -133,7 +133,7 @@ Class Reports{
         // adds id index to each report
         $index = function( array $reports ) {
             foreach ( $reports as $report_id => $report ) {
-                $ret[$report_id]['id'] = $report_id;
+                $reports[$report_id]['id'] = $report_id;
             }
             return $reports;
         };
