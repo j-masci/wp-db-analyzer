@@ -26,7 +26,9 @@ function render_table( $columns, array $rows, array $args = [] ){
         },
         'sanitize_cell' => function( $cell, $key, $row ) {
             return sanitize_text_field( $cell );
-        }
+        },
+        // array of keys where we don't sanitize the cell data (for rows, not columns)
+        'raw_html_keys' => [],
     ];
 
     // Merge the default arguments. There are easier ways to do this, but this is explicit.
@@ -148,7 +150,13 @@ function render_table( $columns, array $rows, array $args = [] ){
                     $col_class = $args['skip_header'] ? '' : 'col-' . $column_key;
 
                     echo '<' . $tag . ' class="' . $col_class . '">';
-                    echo $args['sanitize_cell']( $cell, $column_key, $row );
+
+                    if ( in_array( $column_key, $args['raw_html_keys'] ) ) {
+                        echo $cell;
+                    } else {
+                        echo $args['sanitize_cell']( $cell, $column_key, $row );
+                    }
+
                     echo '</' . $tag . '>';
                 }
 

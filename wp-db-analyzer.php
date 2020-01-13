@@ -212,6 +212,27 @@ Class WP_DB_Analyzer_Plugin
             default:
         }
     }
+
+    /**
+     * @return string
+     */
+    public function get_reports_url(){
+        return add_query_arg( [
+            'page' => $this->settings['menu_slug']
+        ], admin_url('admin.php') );
+    }
+
+    /**
+     * @param $report_id
+     */
+    public function get_report_url( $report_id ) {
+        // note: $_GET['report'] is used into other places. You can't change 'report'
+        // only here.
+        return add_query_arg( [
+            'page' => $this->settings['menu_slug'],
+            'report' => sanitize_text_field( $report_id ),
+        ], admin_url('admin.php') );
+    }
 }
 
 WP_DB_Analyzer_Plugin::get_instance();

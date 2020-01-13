@@ -1,8 +1,39 @@
 <?php
+/**
+ * Holds Report_IDs, Reports, and Report classes.
+ */
 
 namespace WP_DB_Analyzer;
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if (!defined('ABSPATH')) exit;
+
+/**
+ * Holds report IDs as class constants.
+ *
+ * Class Report_IDs
+ * @package WP_DB_Analyzer
+ */
+Class Report_IDs
+{
+
+    const POST_STATUS = 'post_status';
+    const POST_META = 'post_meta';
+    const POST_DATES = 'post_dates';
+    const TRANSIENT_TIMEOUTS = 'transient_timeouts';
+    const USER_META = 'user_meta';
+
+    /**
+     * Similar to, but quite possibly not identical to, array_keys( Reports::get_all() )
+     *
+     * @return array
+     * @throws \ReflectionException
+     */
+    public static function get_all()
+    {
+        $r = new \ReflectionClass(self::class);
+        return $r->getConstants();
+    }
+}
 
 /**
  * Build and registers all available reports.
@@ -14,161 +45,295 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * Class Reports
  * @package WP_DB_Analyzer
  */
-Class Reports{
+Class Reports
+{
 
     /**
-     * id: choose a unique ID,
-     *
-     * tables: an array of database tables, next to which, we'll print the report title for a user to select.
-     *
-     * title: give it a title so we can print the title when a user is selecting reports.
-     *
-     * render: do all the expensive work here, and echo (don't return) the HTML for displaying the report.
+     * A string that generally means "all reports"
      */
-//    public static $example_report_array = [
-//        'id' => 'abc123',
-//        'tables' => [ $wpdb->options ],
-//        'title' => 'Example Report',
-//        'render' => function( array $self ){},
-//    ];
+    const REPORT_ID_ALL = '__all';
 
     /**
-     * Invokes the render index of an array and returns what it outputs.
+     * An example report with comments.
      *
-     * Your render callback should echo the HTML, but this method will return it.
-     *
-     * @param array $report
-     * @return false|string
+     * @return array
      */
-    public static function render( array $report ) {
-        if ( isset( $report['render'] ) && is_callable( $report['render'] ) ) {
-            ob_start();
-            call_user_func( $report['render'], $report );
-            return ob_get_clean();
-        }
-    }
+    public static function example_report()
+    {
 
-    /**
-     * Meant to be called from within your render function. Therefore,
-     * will print an empty tag if the title index is not set.
-     *
-     * @param array $report
-     */
-    public static function print_title( array $report ) {
-        ?>
-        <h2><?= @$report['title']; ?></h2>
-        <?php
+        global $wpdb;
+
+        return [
+            // Each report requires a unique ID.
+            'id' => 'example-report-id',
+            // An array of associated database tables. When reports refer to more than one table,
+            // it might be best to just put them in one table. On the report landing page, the report
+            // links show up next to the database table(s) you put here. If you omit this index
+            // or set it to an empty array, then most likely, your report shows up in a category
+            // named "Other Reports" or similar.
+            'tables' => [$wpdb->posts],
+            // A required title for the report so that we can display links that show the report.
+            'title' => 'Example Report',
+            // An optional short description of the report that can supplement the title.
+            // This is a function in case it has to do any work, and so that we don't do that work
+            // during report registration.
+            // Likely shows up in the title attribute of anchor tags that link to reports.
+            // If you want a long description, put more stuff in the render function.
+            'get_desc' => function ($self) {
+                return "This example report doesn't show anything.";
+            },
+            // A callable function to run the report AND render its output. All heavy lifting
+            // must be done within here. $report is "this" array. $request might be $_GET.
+            // WARNING: use $request, not $_GET in the callback. We may have a page that lists all
+            // reports, which will pass in an empty $request array. Also, there are other reasons.
+            // Note: an example of $request would be to pass in a date format used in reports that
+            // categorize items by date. This can make the report dynamic and do many things while
+            // at the same time providing a permalink to access the same version of the report again.
+            'render' => function ($report, $request) {
+                echo "html...";
+            }
+        ];
+
     }
 
     /**
      * Builds and returns all reports (an array of arrays).
      *
-     * As a reminder, all heavy lifting must be done in the render callback in each report.
-     *
-     * Expensive operations must not be done inside of this function otherwise.
+     * Please see the example report for documentation.
      *
      * @return array
      */
-    public static function get_all(){
+    public static function get_all()
+    {
 
         global $wpdb;
 
         $reports = [];
 
         $reports[Report_IDs::POST_STATUS] = [
-            'tables' => [ $wpdb->posts ],
+            'tables' => [$wpdb->posts],
             'title' => 'Post Status Report',
-            'render' => function( $self ){
-                self::print_title( $self );
-                echo render_table( null, SQL::posts_report()->convert_to_record_set_with_headings(), [
+            'get_desc' => function(){
+                return "Compares post status with post types, showing the distribution of items in the wp_posts table.";
+            },
+            'render' => function ($self) {
+                echo render_table(null, SQL::posts_report()->convert_to_record_set_with_headings(), [
                     'skip_header' => true,
-                ] );
+                ]);
             }
         ];
 
         $reports[Report_IDs::POST_META] = [
-            'tables' => [ $wpdb->postmeta ],
+            'tables' => [$wpdb->postmeta],
             'title' => 'Post Meta Report',
-            'render' => function( $self ){
-                self::print_title( $self );
-                echo render_table( null, SQL::post_meta_report()->convert_to_record_set_with_headings(), [
+            'get_desc' => function(){
+                return "Compares post types with meta keys, showing how each of them contribute to the size of your wp_postmeta table.";
+            },
+            'render' => function ($self) {
+                echo render_table(null, SQL::post_meta_report()->convert_to_record_set_with_headings(), [
                     'skip_header' => true,
-                ] );
+                ]);
             }
         ];
 
         $reports[Report_IDs::POST_DATES] = [
-            'tables' => [ $wpdb->posts ],
+            'tables' => [$wpdb->posts],
             'title' => 'Post Published Date Report',
-            'render' => function( $self ){
-                self::print_title( $self );
-                echo render_table( null, SQL::post_date_report()->convert_to_record_set_with_headings(), [
+            'get_desc' => function(){
+                return "Displays the dates that posts were published, broken down by post type.";
+            },
+            'render' => function ($self) {
+                echo render_table(null, SQL::post_date_report()->convert_to_record_set_with_headings(), [
                     'skip_header' => true,
-                ] );
+                ]);
             }
         ];
 
         $reports[Report_IDs::TRANSIENT_TIMEOUTS] = [
-            'tables' => [ $wpdb->options ],
+            'tables' => [$wpdb->options],
             'title' => 'Transient Timeout Report',
-            'render' => function( $self ){
-                self::print_title( $self );
-                echo render_table( null, SQL::transients_report()->convert_to_record_set_with_headings( "Hours Until Expiry" ), [
+            'get_desc' => function(){
+                return "Displays the number of transients in the wp_options table categorized by how long until they expire.";
+            },
+            'render' => function ($self) {
+                echo render_table(null, SQL::transients_report()->convert_to_record_set_with_headings("Hours Until Expiry"), [
                     'skip_header' => true,
-                ] );
+                ]);
             }
         ];
 
         $reports[Report_IDs::USER_META] = [
-            'tables' => [ $wpdb->usermeta ],
+            'tables' => [$wpdb->usermeta],
             'title' => 'User Meta Report',
-            'render' => function( $self ){
-                self::print_title( $self );
-                echo render_table( null, SQL::user_meta_report()->convert_to_record_set_with_headings(), [
+            'get_desc' => function(){
+                return "Compares user roles with user meta keys, showing how each of them contribute to the size of your wp_usermeta table.";
+            },
+            'render' => function ($self) {
+                echo render_table(null, SQL::user_meta_report()->convert_to_record_set_with_headings(), [
                     'skip_header' => true,
-                ] );
+                ]);
             }
         ];
 
         // adds id index to each report
-        $index = function( array $reports ) {
-            foreach ( $reports as $report_id => $report ) {
+        $index = function (array $reports) {
+            foreach ($reports as $report_id => $report) {
                 $reports[$report_id]['id'] = $report_id;
             }
             return $reports;
         };
 
         // Add the IDs before applying filters.
-        $reports = $index( $reports );
+        $reports = $index($reports);
 
         /**
          * Hook to modify reports array.
          */
-        $reports = apply_filters( 'wpdba/reports', $reports );
+        $reports = apply_filters('wpdba/reports', $reports);
 
         // Do the IDs again, after applying filters.
-        $reports = $index( $reports );
+        $reports = $index($reports);
 
         return $reports;
     }
+
+    /**
+     * @param $table
+     */
+    public static function filter_by_database_table(array $reports, $table)
+    {
+        return array_filter($reports, function ($report) use ($table) {
+            return isset($report['tables']) && is_array($report['tables']) && in_array($table, $report['tables']);
+        });
+    }
+
+    /**
+     * Returns anchor tag(s) for one or more reports (or empty string).
+     *
+     * @param $reports
+     * @return string
+     */
+    public static function link_reports($reports)
+    {
+        return implode(", ", array_map(function ($report) {
+            return Report::link($report);
+        }, $reports));
+    }
+
+
 }
 
 /**
- * Holds report IDs as class constants.
+ * Holds static methods for reports. A "report" is an array containing
+ * data and callables.
  *
- * Class Report_IDs
+ * This class is not instantiated. It's simpler like this for several reasons:
+ *
+ * - Easier to build reports.
+ * - All/most static methods are be pure, and are easily tested.
+ * - No inheritance and no need to declare new classes for each report.
+ * - A report is not tightly coupled to an interface. Doing so would
+ * force us to define many redundant methods.
+ * - etc.
+ *
+ * Class Report
  * @package WP_DB_Analyzer
  */
-Class Report_IDs{
+Class Report
+{
 
-    const POST_STATUS = 'post_status';
-    const POST_META = 'post_meta';
-    const POST_DATES = 'post_dates';
-    const TRANSIENT_TIMEOUTS = 'transient_timeouts';
-    const USER_META = 'user_meta';
+    /**
+     * This is one way to render sort of the "extended" report which
+     * includes the report title, description, render time, and the body
+     * of the report, which is returned from self::render().
+     *
+     * @param array $report
+     * @param array $request
+     */
+    public static function render_extended(array $report, array $request = [] )
+    {
+        ob_start();
 
-    public static function get_all(){
-        $r = new \ReflectionClass(self::class);
-        return $r->getConstants();
+        // get the html and track the time
+        list($report_body, $report_desc, $report_time) = call_user_func(function () use ($report, $request) {
+
+            $t1 = microtime(true);
+
+            $desc = Report::get_description($report);
+
+            $body = Report::render($report, $request );
+
+            $time = round(microtime(true) - $t1, 8);
+
+            return [$body, $desc, $time];
+        });
+
+        ?>
+        <h2><?= sanitize_text_field($report['title']); ?></h2>
+        <?= $report_desc ? '<p>' . $report_desc . '</p>' : ''; ?>
+        <p>Report generation time: <strong><?= $report_time; ?></strong> seconds.</p>
+        <?= $report_body; ?>
+        <?php
+
+        return ob_get_clean();
     }
+
+    /**
+     * Invokes the callable render index of $report and returns what it prints.
+     *
+     * @param array $report
+     * @param array $request
+     * @return string
+     */
+    public static function render(array $report, array $request = [])
+    {
+
+        ob_start();
+
+        if (isset($report['render']) && is_callable($report['render'])) {
+            call_user_func_array($report['render'], [$report, $request]);
+        }
+
+        return ob_get_clean();
+    }
+
+    /**
+     * Gets the url where the report is displayed.
+     *
+     * @param array $report
+     * @return string
+     */
+    public static function get_link(array $report)
+    {
+        return WP_DB_Analyzer_Plugin::get_instance()->get_report_url(@$report['id']);
+    }
+
+    /**
+     * Returns an anchor tag linking to the report.
+     *
+     * @param array $report
+     * @return false|string
+     */
+    public static function link(array $report)
+    {
+
+        $desc = self::get_description($report);
+
+        return '<a href="' . esc_url(self::get_link($report)) . '" title="' . esc_attr($desc) . '">' . sanitize_text_field(@$report['title']) . '</a>';
+    }
+
+    /**
+     * @param array $report
+     * @return string
+     */
+    public static function get_description(array $report)
+    {
+
+        if (isset($report['get_desc']) && is_callable($report['get_desc'])) {
+            return call_user_func_array($report['get_desc'], $report);
+        }
+
+        return "";
+    }
+
 }
