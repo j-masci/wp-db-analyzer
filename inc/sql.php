@@ -5,14 +5,85 @@ namespace WP_DB_Analyzer;
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
- * Store queries or things related to queries here for easier
- * re-use.
+ * Holds static methods for retrieving and building report
+ * data. todo: better class name
  *
  * Class SQL
  * @package WP_DB_Analyzer
  */
 Class SQL
 {
+
+    /**
+     * Count terms in each taxonomy and shows the object types each
+     * taxonomy is registered to.
+     *
+     * @return Matrix
+     */
+    public static function term_taxonomy_report(){
+
+        global $wpdb;
+        global $wp_taxonomies;
+
+        $r = $wpdb->get_results( "SELECT *, count(*) AS count FROM $wpdb->term_taxonomy GROUP BY taxonomy ORDER BY taxonomy;" );
+
+        $matrix = new Matrix();
+
+        if ( $r ) {
+            foreach ( $r as $row ) {
+
+                // the post types the taxonomy is registered to
+                $object_types = isset( $wp_taxonomies[$row->taxonomy]->object_type ) && is_array( $wp_taxonomies[$row->taxonomy]->object_type ) ? $wp_taxonomies[$row->taxonomy]->object_type : [];
+                $object_types_str = implode( ", ", $object_types );
+
+                $matrix->set( $object_types_str, $row->taxonomy, $row->count );
+            }
+        }
+
+        $matrix->set_row_totals( $matrix::get_array_summer() );
+        $matrix->set_column_totals( $matrix::get_array_summer() );
+
+        return $matrix;
+    }
+
+    /**
+     * @return Matrix
+     */
+    public static function term_relationships_report(){
+
+        global $wpdb;
+
+        // todo: i don't think this does the correct thing for taxonomies belonging to multiple post types
+        $q = "
+        SELECT t.*, tt.*, tr.*, p.post_type, p.ID, count(object_id) AS count FROM $wpdb->term_relationships AS tr
+        INNER JOIN $wpdb->posts AS p ON p.ID = tr.object_id
+        INNER JOIN $wpdb->term_taxonomy AS tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+        INNER JOIN $wpdb->terms AS t ON t.term_id = tt.term_id         
+        GROUP BY tt.term_id, p.post_type
+        ";
+
+        $r = $wpdb->get_results( $q );
+
+        // echo '<pre>' . print_r($r, true) . '</pre>';
+
+        $matrix = new Matrix();
+
+        foreach ( $r as $row ) {
+            $matrix->set( sanitize_text_field( $row->name ), $row->post_type, $row->count );
+        }
+
+        $matrix->sort_columns( function( $keys ){
+            asort( $keys );
+            return $keys;
+        });
+
+        $matrix->sort_rows( function( $keys ){
+            asort( $keys );
+            return $keys;
+        });
+
+        return $matrix;
+    }
 
     /**
      * @return Matrix

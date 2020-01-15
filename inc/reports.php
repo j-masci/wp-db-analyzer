@@ -21,6 +21,7 @@ Class Report_IDs
     const POST_DATES = 'post_dates';
     const TRANSIENT_TIMEOUTS = 'transient_timeouts';
     const USER_META = 'user_meta';
+    const TERM_RELATIONSHIPS_REPORT = 'term_rel';
 
     /**
      * Similar to, but quite possibly not identical to, array_keys( Reports::get_all() )
@@ -113,7 +114,7 @@ Class Reports
         $reports[Report_IDs::POST_STATUS] = [
             'tables' => [$wpdb->posts],
             'title' => 'Post Status Report',
-            'get_desc' => function(){
+            'get_desc' => function () {
                 return "Compares post status with post types, showing the distribution of items in the wp_posts table.";
             },
             'render' => function ($self) {
@@ -126,7 +127,7 @@ Class Reports
         $reports[Report_IDs::POST_META] = [
             'tables' => [$wpdb->postmeta],
             'title' => 'Post Meta Report',
-            'get_desc' => function(){
+            'get_desc' => function () {
                 return "Compares post types with meta keys, showing how each of them contribute to the size of your wp_postmeta table.";
             },
             'render' => function ($self) {
@@ -139,7 +140,7 @@ Class Reports
         $reports[Report_IDs::POST_DATES] = [
             'tables' => [$wpdb->posts],
             'title' => 'Post Published Date Report',
-            'get_desc' => function(){
+            'get_desc' => function () {
                 return "Displays the dates that posts were published, broken down by post type.";
             },
             'render' => function ($self) {
@@ -152,7 +153,7 @@ Class Reports
         $reports[Report_IDs::TRANSIENT_TIMEOUTS] = [
             'tables' => [$wpdb->options],
             'title' => 'Transient Timeout Report',
-            'get_desc' => function(){
+            'get_desc' => function () {
                 return "Displays the number of transients in the wp_options table categorized by how long until they expire.";
             },
             'render' => function ($self) {
@@ -165,11 +166,29 @@ Class Reports
         $reports[Report_IDs::USER_META] = [
             'tables' => [$wpdb->usermeta],
             'title' => 'User Meta Report',
-            'get_desc' => function(){
+            'get_desc' => function () {
                 return "Compares user roles with user meta keys, showing how each of them contribute to the size of your wp_usermeta table.";
             },
             'render' => function ($self) {
                 echo render_table(null, SQL::user_meta_report()->convert_to_record_set_with_headings(), [
+                    'skip_header' => true,
+                ]);
+            }
+        ];
+
+        $reports[Report_IDs::TERM_RELATIONSHIPS_REPORT] = [
+            'tables' => [$wpdb->term_relationships],
+            'title' => 'Term Relationships Report',
+            'get_desc' => function () {
+                return "...";
+            },
+            'render' => function ($self) {
+
+                echo render_table(null, SQL::term_taxonomy_report()->convert_to_record_set_with_headings(), [
+                    'skip_header' => true,
+                ]);
+
+                echo render_table(null, SQL::term_relationships_report()->convert_to_record_set_with_headings(), [
                     'skip_header' => true,
                 ]);
             }
@@ -250,7 +269,7 @@ Class Report
      * @param array $report
      * @param array $request
      */
-    public static function render_extended(array $report, array $request = [] )
+    public static function render_extended(array $report, array $request = [])
     {
         ob_start();
 
@@ -261,7 +280,7 @@ Class Report
 
             $desc = Report::get_description($report);
 
-            $body = Report::render($report, $request );
+            $body = Report::render($report, $request);
 
             $time = round(microtime(true) - $t1, 8);
 
