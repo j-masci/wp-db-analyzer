@@ -134,6 +134,10 @@ function render_table( $columns, array $rows, array $args = [] ){
 
                     $cell = isset( $row[$column_key] ) ? $row[$column_key] : "";
 
+                    if ( is_object( $cell ) && is_callable( $cell ) ) {
+                        // todo: allow customizing both inner and full contents of each table cell? eg. need to add data attributes to <td>
+                    }
+
                     // this optional callback might be used to make the first
                     // row of the table contain header cells.
                     if ( $args['get_table_cell_tag'] ) {

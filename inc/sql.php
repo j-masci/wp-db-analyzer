@@ -15,6 +15,86 @@ Class SQL
 {
 
     /**
+     * @param $table
+     * @return int
+     */
+    public static function count_rows_in_table( $table ) {
+
+        global $wpdb;
+
+        // todo: catch error if table does not exist and maybe return 0 ?
+        return (int) $wpdb->get_var( "SELECT count(*) AS count FROM " . esc_sql( $table ) . ";" );
+    }
+
+    /**
+     * todo: move this?
+     *
+     * Render an HTML table showing the number of records in given
+     * database tables.
+     *
+     * @param array $database_tables
+     * @return string
+     */
+    public static function render_table_counts( array $database_tables ) {
+        return render_table( null, self::count_table_records_report( $database_tables )->convert_to_record_set_with_headings(), [
+            'skip_header' => true
+        ]);
+    }
+
+    /**
+     * @param array $database_tables
+     * @return Matrix
+     */
+    public static function count_table_records_report( array $database_tables ) {
+
+        $matrix = new Matrix();
+
+        foreach ( $database_tables as $table ) {
+            $matrix->set( "Records", sanitize_text_field( $table ), self::count_rows_in_table( $table ) );
+        }
+
+        return $matrix;
+    }
+
+    /**
+     * Count terms in each taxonomy and shows the object types each
+     * taxonomy is registered to.
+     *
+     * @return Matrix
+     */
+    public static function term_meta_report(){
+
+        global $wpdb;
+
+        $q = "
+        SELECT tt.*, t.*, tm.meta_key, count(*) AS count FROM $wpdb->terms AS t
+        INNER JOIN $wpdb->termmeta AS tm ON tm.term_id = t.term_id
+        INNER JOIN $wpdb->term_taxonomy AS tt ON tt.term_id = t.term_id
+        GROUP BY tm.meta_key 
+        ORDER BY tt.taxonomy ASC, t.name ASC        
+        ";
+
+        $rows = $wpdb->get_results( $q );
+
+        $matrix = new Matrix();
+
+        foreach ($rows as $row) {
+            $t = $row->taxonomy;
+            $n = sanitize_text_field( $row->name );
+            $matrix->set( "[$t] $n", $row->meta_key, $row->count );
+        }
+
+        $matrix->set_row_totals( $matrix::get_array_summer() );
+        $matrix->set_column_totals( $matrix::get_array_summer() );
+
+        $matrix->sort_columns( function( $keys ) {
+            return [ 'page', 'post', 'attachment' ];
+        } );
+
+        return $matrix;
+    }
+
+    /**
      * Count terms in each taxonomy and shows the object types each
      * taxonomy is registered to.
      *
@@ -36,12 +116,19 @@ Class SQL
                 $object_types = isset( $wp_taxonomies[$row->taxonomy]->object_type ) && is_array( $wp_taxonomies[$row->taxonomy]->object_type ) ? $wp_taxonomies[$row->taxonomy]->object_type : [];
                 $object_types_str = implode( ", ", $object_types );
 
-                $matrix->set( $object_types_str, $row->taxonomy, $row->count );
+                $matrix->set( "count", $row->taxonomy, $row->count );
+                $matrix->set( "object_types", $row->taxonomy, $object_types_str );
             }
         }
 
-        $matrix->set_row_totals( $matrix::get_array_summer() );
-        $matrix->set_column_totals( $matrix::get_array_summer() );
+        $matrix->set_row_totals( function( $row, $key ){
+
+            if ( $key === "count" ) {
+                return array_sum( $row );
+            }
+
+            return "N/A";
+        } );
 
         return $matrix;
     }
@@ -53,29 +140,28 @@ Class SQL
 
         global $wpdb;
 
-        // todo: i don't think this does the correct thing for taxonomies belonging to multiple post types
+        // todo: is this query sufficient for taxonomies registered to multiple object types? (is group by correct?)
         $q = "
         SELECT t.*, tt.*, tr.*, p.post_type, p.ID, count(object_id) AS count FROM $wpdb->term_relationships AS tr
         INNER JOIN $wpdb->posts AS p ON p.ID = tr.object_id
         INNER JOIN $wpdb->term_taxonomy AS tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
         INNER JOIN $wpdb->terms AS t ON t.term_id = tt.term_id         
         GROUP BY tt.term_id, p.post_type
+        ORDER BY tt.taxonomy ASC, t.name ASC
         ";
 
         $r = $wpdb->get_results( $q );
 
-        // echo '<pre>' . print_r($r, true) . '</pre>';
-
         $matrix = new Matrix();
 
         foreach ( $r as $row ) {
-            $matrix->set( sanitize_text_field( $row->name ), $row->post_type, $row->count );
+            $n = sanitize_text_field( $row->name );
+            $t = $row->taxonomy;
+            $matrix->set( "[$t] $n", $row->post_type, $row->count );
         }
 
-        $matrix->sort_columns( function( $keys ){
-            asort( $keys );
-            return $keys;
-        });
+        $matrix->set_column_totals( $matrix::get_array_summer() );
+        $matrix->set_row_totals( $matrix::get_array_summer() );
 
         $matrix->sort_rows( function( $keys ){
             asort( $keys );

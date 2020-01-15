@@ -4,6 +4,11 @@ namespace WP_DB_Analyzer;
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+// brainstorming
+Interface I_Table_Cell{
+    public function resolve();
+}
+
 /**
  * A class to build a matrix dynamically.
  *
@@ -285,7 +290,7 @@ Class Matrix{
 
         // run the callback for each row
         foreach ( $this->get_row_keys() as $key ) {
-            $value = $callback( $this->get_row( $key ), $key );
+            $value = call_user_func_array( $callback, [ $this->get_row( $key ), $key ] );
             $this->set( $key, $column_key, $value );
         }
 

@@ -38,7 +38,7 @@ $show_tables = $wpdb->get_results( "SHOW TABLES" );
         // the html table data
         return [
             'name' => $table,
-            'records' => (int) $wpdb->get_var( "SELECT count(*) AS count FROM " . esc_sql( $table ) . ";" ),
+            'records' => SQL::count_rows_in_table( $table ),
             'available_reports' => Reports::link_reports( Reports::filter_by_database_table( $reports, $table ) ),
         ];
 
