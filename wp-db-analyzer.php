@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: WP Database Analyzer
- * Plugin URI:  https://github.com/j-masci/wp-database-analyzer
+ * Plugin URI:  https://github.com/j-masci/wp-db-analyzer
  * Description: Displays useful information about your WordPress database
  * Version:     1.0
  * Author:      Joel Masci
@@ -128,7 +128,6 @@ Class WP_DB_Analyzer_Plugin
             $this->includes( 2 );
             $this->enqueue_scripts();
             include $this->settings['path'] . '/tmpl/analyzer.php';
-
         } );
 
         add_submenu_page( $menu_slug, __('Settings','wpda'), __('Settings','wpda'), $cap, $menu_slug_settings, function(){
@@ -141,7 +140,6 @@ Class WP_DB_Analyzer_Plugin
             $this->includes( 2 );
             $this->enqueue_scripts();
             include $this->settings['path'] . '/tmpl/examples.php';
-
         } );
     }
 
@@ -199,7 +197,7 @@ Class WP_DB_Analyzer_Plugin
 
         switch( $step ) {
             case 1:
-
+                // nothing so far
                 break;
             case 2:
 
@@ -214,6 +212,8 @@ Class WP_DB_Analyzer_Plugin
     }
 
     /**
+     * URL for the reports landing page
+     *
      * @return string
      */
     public function get_reports_url(){
@@ -223,7 +223,10 @@ Class WP_DB_Analyzer_Plugin
     }
 
     /**
+     * URL for a single report
+     *
      * @param $report_id
+     * @return string
      */
     public function get_report_url( $report_id ) {
         // note: $_GET['report'] is used into other places. You can't change 'report'

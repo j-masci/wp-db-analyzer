@@ -57,121 +57,6 @@ Class SQL
     }
 
     /**
-     * Count terms in each taxonomy and shows the object types each
-     * taxonomy is registered to.
-     *
-     * @return Matrix
-     */
-    public static function term_meta_report(){
-
-        global $wpdb;
-
-        $q = "
-        SELECT tt.*, t.*, tm.meta_key, count(*) AS count FROM $wpdb->terms AS t
-        INNER JOIN $wpdb->termmeta AS tm ON tm.term_id = t.term_id
-        INNER JOIN $wpdb->term_taxonomy AS tt ON tt.term_id = t.term_id
-        GROUP BY tm.meta_key 
-        ORDER BY tt.taxonomy ASC, t.name ASC        
-        ";
-
-        $rows = $wpdb->get_results( $q );
-
-        $matrix = new Matrix();
-
-        foreach ($rows as $row) {
-            $t = $row->taxonomy;
-            $n = sanitize_text_field( $row->name );
-            $matrix->set( "[$t] $n", $row->meta_key, $row->count );
-        }
-
-        $matrix->set_row_totals( $matrix::get_array_summer() );
-        $matrix->set_column_totals( $matrix::get_array_summer() );
-
-        $matrix->sort_columns( function( $keys ) {
-            return [ 'page', 'post', 'attachment' ];
-        } );
-
-        return $matrix;
-    }
-
-    /**
-     * Count terms in each taxonomy and shows the object types each
-     * taxonomy is registered to.
-     *
-     * @return Matrix
-     */
-    public static function term_taxonomy_report(){
-
-        global $wpdb;
-        global $wp_taxonomies;
-
-        $r = $wpdb->get_results( "SELECT *, count(*) AS count FROM $wpdb->term_taxonomy GROUP BY taxonomy ORDER BY taxonomy;" );
-
-        $matrix = new Matrix();
-
-        if ( $r ) {
-            foreach ( $r as $row ) {
-
-                // the post types the taxonomy is registered to
-                $object_types = isset( $wp_taxonomies[$row->taxonomy]->object_type ) && is_array( $wp_taxonomies[$row->taxonomy]->object_type ) ? $wp_taxonomies[$row->taxonomy]->object_type : [];
-                $object_types_str = implode( ", ", $object_types );
-
-                $matrix->set( "count", $row->taxonomy, $row->count );
-                $matrix->set( "object_types", $row->taxonomy, $object_types_str );
-            }
-        }
-
-        $matrix->set_row_totals( function( $row, $key ){
-
-            if ( $key === "count" ) {
-                return array_sum( $row );
-            }
-
-            return "N/A";
-        } );
-
-        return $matrix;
-    }
-
-    /**
-     * @return Matrix
-     */
-    public static function term_relationships_report(){
-
-        global $wpdb;
-
-        // todo: is this query sufficient for taxonomies registered to multiple object types? (is group by correct?)
-        $q = "
-        SELECT t.*, tt.*, tr.*, p.post_type, p.ID, count(object_id) AS count FROM $wpdb->term_relationships AS tr
-        INNER JOIN $wpdb->posts AS p ON p.ID = tr.object_id
-        INNER JOIN $wpdb->term_taxonomy AS tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
-        INNER JOIN $wpdb->terms AS t ON t.term_id = tt.term_id         
-        GROUP BY tt.term_id, p.post_type
-        ORDER BY tt.taxonomy ASC, t.name ASC
-        ";
-
-        $r = $wpdb->get_results( $q );
-
-        $matrix = new Matrix();
-
-        foreach ( $r as $row ) {
-            $n = sanitize_text_field( $row->name );
-            $t = $row->taxonomy;
-            $matrix->set( "[$t] $n", $row->post_type, $row->count );
-        }
-
-        $matrix->set_column_totals( $matrix::get_array_summer() );
-        $matrix->set_row_totals( $matrix::get_array_summer() );
-
-        $matrix->sort_rows( function( $keys ){
-            asort( $keys );
-            return $keys;
-        });
-
-        return $matrix;
-    }
-
-    /**
      * @return Matrix
      */
     public static function posts_report()
@@ -348,6 +233,191 @@ Class SQL
             unset( $keys['total'] );
             return array_merge( $keys, [ 'total' ] );
         });
+
+        return $matrix;
+    }
+
+    /**
+     * Count terms in each taxonomy and shows the object types each
+     * taxonomy is registered to.
+     *
+     * @return Matrix
+     */
+    public static function term_meta_report(){
+
+        global $wpdb;
+
+        $q = "
+        SELECT tt.*, t.*, tm.meta_key, count(*) AS count FROM $wpdb->terms AS t
+        INNER JOIN $wpdb->termmeta AS tm ON tm.term_id = t.term_id
+        INNER JOIN $wpdb->term_taxonomy AS tt ON tt.term_id = t.term_id
+        GROUP BY tm.meta_key 
+        ORDER BY tt.taxonomy ASC, t.name ASC        
+        ";
+
+        $rows = $wpdb->get_results( $q );
+
+        $matrix = new Matrix();
+
+        foreach ($rows as $row) {
+            $t = $row->taxonomy;
+            $n = sanitize_text_field( $row->name );
+            $matrix->set( "[$t] $n", $row->meta_key, $row->count );
+        }
+
+        $matrix->set_row_totals( $matrix::get_array_summer() );
+        $matrix->set_column_totals( $matrix::get_array_summer() );
+
+        $matrix->sort_columns( function( $keys ) {
+            return [ 'page', 'post', 'attachment' ];
+        } );
+
+        return $matrix;
+    }
+
+    /**
+     * Count terms in each taxonomy and shows the object types each
+     * taxonomy is registered to.
+     *
+     * @return Matrix
+     */
+    public static function term_taxonomy_report(){
+
+        global $wpdb;
+        global $wp_taxonomies;
+
+        $r = $wpdb->get_results( "SELECT *, count(*) AS count FROM $wpdb->term_taxonomy GROUP BY taxonomy ORDER BY taxonomy;" );
+
+        $matrix = new Matrix();
+
+        if ( $r ) {
+            foreach ( $r as $row ) {
+
+                // the post types the taxonomy is registered to
+                $object_types = isset( $wp_taxonomies[$row->taxonomy]->object_type ) && is_array( $wp_taxonomies[$row->taxonomy]->object_type ) ? $wp_taxonomies[$row->taxonomy]->object_type : [];
+                $object_types_str = implode( ", ", $object_types );
+
+                $matrix->set( "count", $row->taxonomy, $row->count );
+                $matrix->set( "object_types", $row->taxonomy, $object_types_str );
+            }
+        }
+
+        $matrix->set_row_totals( function( $row, $key ){
+
+            if ( $key === "count" ) {
+                return array_sum( $row );
+            }
+
+            return "N/A";
+        } );
+
+        return $matrix;
+    }
+
+    /**
+     * @return Matrix
+     */
+    public static function term_relationships_report(){
+
+        global $wpdb;
+
+        // todo: is this query sufficient for taxonomies registered to multiple object types? (is group by correct?)
+        $q = "
+        SELECT t.*, tt.*, tr.*, p.post_type, p.ID, count(object_id) AS count FROM $wpdb->term_relationships AS tr
+        INNER JOIN $wpdb->posts AS p ON p.ID = tr.object_id
+        INNER JOIN $wpdb->term_taxonomy AS tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
+        INNER JOIN $wpdb->terms AS t ON t.term_id = tt.term_id         
+        GROUP BY tt.term_id, p.post_type
+        ORDER BY tt.taxonomy ASC, t.name ASC
+        ";
+
+        $r = $wpdb->get_results( $q );
+
+        $matrix = new Matrix();
+
+        foreach ( $r as $row ) {
+            $n = sanitize_text_field( $row->name );
+            $t = $row->taxonomy;
+            $matrix->set( "[$t] $n", $row->post_type, $row->count );
+        }
+
+        $matrix->set_column_totals( $matrix::get_array_summer() );
+        $matrix->set_row_totals( $matrix::get_array_summer() );
+
+        $matrix->sort_rows( function( $keys ){
+            asort( $keys );
+            return $keys;
+        });
+
+        return $matrix;
+    }
+
+    /**
+     * @return Matrix
+     */
+    public static function comments_report(){
+
+        global $wpdb;
+
+        $q = "
+        SELECT p.post_type, u.display_name, u.user_login, c.user_id AS user_id, c.comment_ID, count(*) AS count FROM $wpdb->comments AS c
+        LEFT JOIN $wpdb->posts AS p ON p.ID = c.comment_post_ID
+        LEFT JOIN $wpdb->users AS u ON u.ID = c.user_id        
+        GROUP BY p.post_type, u.ID
+        ORDER BY p.post_type ASC, u.ID                 
+        ";
+
+        $r = $wpdb->get_results( $q );
+
+        $matrix = new Matrix();
+
+        foreach ( $r as $row ) {
+
+            // check user exists or did exist when the comment was saved.
+            if ( $row->user_id && $row->user_id > 0 ) {
+                if ( $row->user_login ) {
+                    // unsure if the display name can be empty.
+                    $user = $row->display_name ? $row->display_name : '[user_without_a_display_name]';
+                } else {
+                    $user = '[deleted_user]';
+                }
+            } else {
+                $user = "[no_user]";
+            }
+
+            $matrix->set( sanitize_text_field( $user ), $row->post_type, $row->count );
+        }
+
+        $matrix->set_column_totals( $matrix::get_array_summer() );
+        $matrix->set_row_totals( $matrix::get_array_summer() );
+
+        return $matrix;
+    }
+
+    /**
+     * @return Matrix
+     */
+    public static function comment_meta_report(){
+
+        global $wpdb;
+
+        $q = "
+        SELECT cm.meta_key, p.post_type, count(*) AS count FROM $wpdb->comments AS c
+        INNER JOIN $wpdb->commentmeta AS cm ON cm.comment_id = c.comment_ID
+        INNER JOIN $wpdb->posts AS p ON c.comment_post_ID = p.ID
+        GROUP BY cm.meta_key, p.post_type
+        ORDER BY c.comment_ID ASC         
+        ";
+
+        $r = $wpdb->get_results( $q );
+
+        $matrix = new Matrix();
+
+        foreach ( $r as $row ) {
+            $matrix->set( $row->meta_key, $row->post_type, $row->count );
+        }
+
+        $matrix->set_column_totals( $matrix::get_array_summer() );
 
         return $matrix;
     }

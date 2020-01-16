@@ -15,16 +15,16 @@ if (!defined('ABSPATH')) exit;
  */
 Class Report_IDs
 {
-
     const POST_STATUS = 'post_status';
     const POST_META = 'post_meta';
     const POST_DATES = 'post_dates';
     const TRANSIENT_TIMEOUTS = 'transient_timeouts';
     const USER_META = 'user_meta';
-    const TERM_RELATIONSHIPS_REPORT = 'term_rel';
+    const TERMS = 'terms';
+    const COMMENTS = 'comments';
 
     /**
-     * Similar to, but quite possibly not identical to, array_keys( Reports::get_all() )
+     * Similar to, but possibly not identical to array_keys( Reports::get_all() )
      *
      * @return array
      * @throws \ReflectionException
@@ -176,7 +176,7 @@ Class Reports
             }
         ];
 
-        $reports[Report_IDs::TERM_RELATIONSHIPS_REPORT] = [
+        $reports[Report_IDs::TERMS] = [
             'tables' => [$wpdb->terms],
             'title' => 'Terms/Taxonomies Report(s)',
             'get_desc' => function () {
@@ -186,25 +186,54 @@ Class Reports
 
                 global $wpdb;
 
+                echo '<h2>Records in Tables</h2>';
                 echo '<p>The terms table grows when you add insert new terms (ie. categories, tags, etc.). The term_taxonomy table is usually the size of the terms table but can be larger when some taxonomies are assigned to multiple object types. The termmeta table grows when terms store additional meta information (like custom fields). The term_relationships table grows when objects (ie. post types) are put into terms/categories/tags.</p>';
 
                 echo SQL::render_table_counts( [ $wpdb->terms, $wpdb->term_taxonomy, $wpdb->termmeta, $wpdb->term_relationships] );
 
+                echo '<h2>Terms in Taxonomies</h2>';
                 echo '<p>Taxonomies (columns) vs. the number of terms and the object types that the taxonomy is assigned to. The columns and the term counts are derived from the database, therefore, if a taxonomy is registered but has no terms, it will not show up (as a column). The object types are derived from code and therefore they depend on the state of your active plugins and themes. If a taxonomy is not given an object type, this means that the data still exists in the database but the plugin or theme responsible for the taxonomy has likely changed or been de-activated (ie. the data is probably stale).</p>';
 
                 echo render_table(null, SQL::term_taxonomy_report()->convert_to_record_set_with_headings(), [
                     'skip_header' => true,
                 ]);
 
+                echo '<h2>Objects in Terms</h2>';
                 echo '<p>Number of objects (usually, posts) assigned to terms (rows) categorized by object type (columns). When a taxonomy is registered to multiple object types, you might see multiple entries in the same row. Generally speaking, you can find the same numbers natively through WordPress by looking at the Count column when viewing a term.</p>';
 
                 echo render_table(null, SQL::term_relationships_report()->convert_to_record_set_with_headings(), [
                     'skip_header' => true,
                 ]);
 
-                echo '<p>Term Meta...</p>';
+                echo '<h2>Term Meta Keys</h2>';
 
                 echo render_table(null, SQL::term_meta_report()->convert_to_record_set_with_headings(), [
+                    'skip_header' => true,
+                ]);
+
+            }
+        ];
+
+        $reports[Report_IDs::COMMENTS] = [
+            'tables' => [$wpdb->comments],
+            'title' => 'Comments Report',
+            'get_desc' => function () {
+                return "Comments and comment meta by user and post type.";
+            },
+            'render' => function ($self) {
+
+                global $wpdb;
+                echo SQL::render_table_counts( [ $wpdb->comments, $wpdb->commentmeta ] );
+
+                echo '<h2>Number of Comments by User and Post Type</h2>';
+
+                echo render_table(null, SQL::comments_report()->convert_to_record_set_with_headings(), [
+                    'skip_header' => true,
+                ]);
+
+                echo '<h2>Number of Rows in Comment Meta Table by Meta Key and Post Type</h2>';
+
+                echo render_table(null, SQL::comment_meta_report()->convert_to_record_set_with_headings(), [
                     'skip_header' => true,
                 ]);
 
@@ -234,7 +263,9 @@ Class Reports
     }
 
     /**
+     * @param array $reports
      * @param $table
+     * @return array
      */
     public static function filter_by_database_table(array $reports, $table)
     {
@@ -279,12 +310,11 @@ Class Report
 {
 
     /**
-     * This is one way to render sort of the "extended" report which
-     * includes the report title, description, render time, and the body
-     * of the report, which is returned from self::render().
+     * Wraps self::render() and adds a few things.
      *
      * @param array $report
      * @param array $request
+     * @return false|string
      */
     public static function render_extended(array $report, array $request = [])
     {
