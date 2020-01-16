@@ -120,7 +120,7 @@ Class WP_DB_Analyzer_Plugin
     {
         $cap = 'manage_options';
         $menu_slug = $this->settings['menu_slug'];
-        $menu_slug_settings = $menu_slug . '-settings';
+        // $menu_slug_settings = $menu_slug . '-settings';
 
         add_menu_page( __("Database Analyzer",'wpda'), __("Database Analyzer",'wpda'), $cap, $menu_slug, false, 'dashicons-visibility', $this->settings['menu_position'] );
 
@@ -130,17 +130,12 @@ Class WP_DB_Analyzer_Plugin
             include $this->settings['path'] . '/tmpl/analyzer.php';
         } );
 
-        add_submenu_page( $menu_slug, __('Settings','wpda'), __('Settings','wpda'), $cap, $menu_slug_settings, function(){
-            $this->includes( 2 );
-            $this->enqueue_scripts();
-            include $this->settings['path'] . '/tmpl/settings.php';
-        } );
-
-        add_submenu_page( $menu_slug, __('Examples','wpda'), __('Examples','wpda'), $cap, 'wp-db-analyzer-examples', function(){
-            $this->includes( 2 );
-            $this->enqueue_scripts();
-            include $this->settings['path'] . '/tmpl/examples.php';
-        } );
+        // settings page not needed atm
+//        add_submenu_page( $menu_slug, __('Settings','wpda'), __('Settings','wpda'), $cap, $menu_slug_settings, function(){
+//            $this->includes( 2 );
+//            $this->enqueue_scripts();
+//            include $this->settings['path'] . '/tmpl/settings.php';
+//        } );
     }
 
     /**

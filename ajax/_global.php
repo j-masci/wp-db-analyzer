@@ -13,8 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 $plugin = WP_DB_Analyzer_Plugin::get_instance();
 
 if ( ! wp_verify_nonce( @$_REQUEST['_nonce'], $plugin->settings['nonce_secret'] ) ){
-
+    ajax_response( "error", [ "Nonce Error." ] );
 }
 
 // shouldn't get to here
-echo ajax_response( "error", [ "Hit end of file" ] );
+ajax_response( "error", [ "Hit end of file" ] );

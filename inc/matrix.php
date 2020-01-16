@@ -4,11 +4,6 @@ namespace WP_DB_Analyzer;
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-// brainstorming
-Interface I_Table_Cell{
-    public function resolve();
-}
-
 /**
  * A class to build a matrix dynamically.
  *
