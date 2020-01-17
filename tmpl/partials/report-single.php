@@ -22,6 +22,15 @@ if (isset($reports[$report_id])) {
     $reports_to_render = [];
 }
 
+$get_report_request = function( $report_id, $total_number_of_reports ) {
+
+    if ( $total_number_of_reports <= 1 ) {
+        return $_GET;
+    }
+
+    return isset( $_GET['report_settings'][$report_id] ) && is_array( $_GET['report_settings'][$report_id] ) ? $_GET['report_settings'][$report_id] : [];
+}
+
 ?>
 
 <div class="wrap">
@@ -41,7 +50,8 @@ if (isset($reports[$report_id])) {
 
         $count = 0;
         foreach ($reports_to_render as $report) {
-            echo Report::render_extended($report);
+
+            echo Report::render_extended($report, $get_report_request( @$report['id'], count( $reports_to_render ) ) );
 
             // this is ugly, sorry.
             $count++;

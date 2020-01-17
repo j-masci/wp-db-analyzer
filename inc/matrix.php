@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  *
  * todo: Add validation to the set_matrix method (possibly mutating input instead of throwing an error if some rows are missing some columns).
  *
- * To display your data in an HTML table with row and column headings, @see convert_to_record_set_with_headings.
+ * To display your data in an HTML table with row and column headings, @see self::convert_to_record_set_with_headings().
  *
  * Class Matrix_Alternate
  * @package WP_DB_Analyzer
@@ -206,8 +206,6 @@ Class Matrix{
     }
 
     /**
-     * Note that all columns should have the same count/indexes/structure.
-     *
      * @return array
      */
     public function get_first_column(){
@@ -228,8 +226,6 @@ Class Matrix{
     }
 
     /**
-     * Note that all rows should have the same count/indexes/structure.
-     *
      * @return array|mixed
      */
     public function get_first_row(){
@@ -260,18 +256,6 @@ Class Matrix{
     }
 
     /**
-     * Returns a function that sums an array and accepts the arguments
-     * given in the callback for set_row_totals/set_column_totals.
-     *
-     * @return \Closure
-     */
-    public static function get_array_summer(){
-        return function( $arr, $key ) {
-            return array_sum( $arr );
-        };
-    }
-
-    /**
      * Gives you the entire row which you can use to generate a total.
      *
      * Once the totals are generated they are more or less no different
@@ -289,7 +273,7 @@ Class Matrix{
             $this->set( $key, $column_key, $value );
         }
 
-        // put the column at the end
+        // put the new column at the end
         $this->sort_columns( function( $keys ) use( $column_key ){
             unset( $keys[$column_key] );
             return array_merge( $keys, [ $column_key ] );
@@ -308,7 +292,7 @@ Class Matrix{
             $this->set( $row_key, $key, $value );
         }
 
-        // put the row at the bottom
+        // put the new row at the bottom
         $this->sort_rows( function( $keys ) use( $row_key ){
             unset( $keys[$row_key] );
             return array_merge( $keys, [ $row_key ] );
@@ -354,7 +338,6 @@ Class Matrix{
      * Keys passed in that are not in the data are ignored.
      *
      * @param array $keys
-     * @return array
      */
     public function apply_row_sort( array $keys ){
         $this->matrix = self::apply_sort_order_to_data( $keys, $this->matrix );
@@ -453,11 +436,23 @@ Class Matrix{
      * @param int $plus_equals
      * @return \Closure
      */
-    public function get_incrementer( $plus_equals = 1 ){
+    public static function get_incrementer( $plus_equals = 1 ){
         return function( $prev ) use( $plus_equals ) {
             $prev = $prev ? $prev : 0;
             $prev += $plus_equals;
             return $prev;
+        };
+    }
+
+    /**
+     * Returns a function that sums an array and accepts the arguments
+     * given in the callback for set_row_totals/set_column_totals.
+     *
+     * @return \Closure
+     */
+    public static function get_array_summer(){
+        return function( $arr, $key ) {
+            return array_sum( $arr );
         };
     }
 }

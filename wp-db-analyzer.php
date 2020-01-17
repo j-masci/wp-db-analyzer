@@ -72,15 +72,18 @@ Class WP_DB_Analyzer_Plugin
 
         $this->includes( 1 );
 
+        // rtrim might be redundant
+        $path = rtrim( dirname( __FILE__ ), '/' );
+
         $this->settings = [
             'menu_slug' => 'wp-database-analyzer',
             'menu_position' => 90,
             'ajax_action' => 'wpdba_ajax',
             'nonce_secret' => 'wpdba_secret_12371236123',
-            // rtrim might be redundant
-            'path' => rtrim( dirname( __FILE__ ), '/' ),
+            'path' => $path,
             'dir' => 'wp-database-analyzer',
             'url' => rtrim( plugins_url( 'wp-database-analyzer' ), '/' ),
+            'report_template_path' => $path . '/reports'
         ];
 
         add_action('admin_menu', [$this, 'admin_menu']);

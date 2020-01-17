@@ -64,6 +64,6 @@ $show_tables = $wpdb->get_results( "SHOW TABLES" );
     <br>
     <h2>Run All Reports</h2>
     <p>If your database is small enough and/or your server is powerful enough, you can run all reports in one go. On most websites, this is probably not an issue. If some reports have settings, they probably do not apply when running all reports at once.</p>
-    <p><a href="<?= Report::get_link( [ 'id' => Reports::REPORT_ID_ALL ] ); ?>" class="button button-primary">Run All Reports</a></p>
+    <p><a href="<?= Report::get_url( [ 'id' => Reports::REPORT_ID_ALL ] ); ?>" class="button button-primary">Run All Reports</a></p>
 
 </div>

@@ -92,7 +92,13 @@ Class Reports
             // at the same time providing a permalink to access the same version of the report again.
             'render' => function ($report, $request) {
                 echo "html...";
-            }
+            },
+            // as an alternative to the render function you can set a template index.
+            // template should be the absolute path to the php file to render the report.
+            // i wouldn't say you can't simply include a template file inside your render
+            // function. This would work more or less fine but wouldn't allow us to
+            // test if the file exists without running it.
+            'template' => '',
         ];
 
     }
@@ -109,6 +115,8 @@ Class Reports
 
         global $wpdb;
 
+        $p = WP_DB_Analyzer_Plugin::get_instance();
+        $report_template_path = $p->settings['report_template_path'];
         $reports = [];
 
         $reports[Report_IDs::POST_STATUS] = [
@@ -117,7 +125,7 @@ Class Reports
             'get_desc' => function () {
                 return "Compares post status with post types, showing the distribution of items in the wp_posts table.";
             },
-            'render' => function ($self) {
+            'render' => function ($report, $request) {
                 echo render_table(null, SQL::posts_report()->convert_to_record_set_with_headings(), [
                     'skip_header' => true,
                 ]);
@@ -130,7 +138,7 @@ Class Reports
             'get_desc' => function () {
                 return "Compares post types with meta keys, showing how each of them contribute to the size of your wp_postmeta table.";
             },
-            'render' => function ($self) {
+            'render' => function ($report, $request) {
                 echo render_table(null, SQL::post_meta_report()->convert_to_record_set_with_headings(), [
                     'skip_header' => true,
                 ]);
@@ -140,14 +148,11 @@ Class Reports
         $reports[Report_IDs::POST_DATES] = [
             'tables' => [$wpdb->posts],
             'title' => 'Post Published Date Report',
+            'default_date_format' => 'Y-m-d',
             'get_desc' => function () {
                 return "Displays the dates that posts were published, broken down by post type.";
             },
-            'render' => function ($self) {
-                echo render_table(null, SQL::post_date_report()->convert_to_record_set_with_headings(), [
-                    'skip_header' => true,
-                ]);
-            }
+            'template' => $report_template_path . '/post-date.php',
         ];
 
         $reports[Report_IDs::TRANSIENT_TIMEOUTS] = [
@@ -169,7 +174,7 @@ Class Reports
             'get_desc' => function () {
                 return "Compares user roles with user meta keys, showing how each of them contribute to the size of your wp_usermeta table.";
             },
-            'render' => function ($self) {
+            'render' => function ($report, $request) {
                 echo render_table(null, SQL::user_meta_report()->convert_to_record_set_with_headings(), [
                     'skip_header' => true,
                 ]);
@@ -182,7 +187,7 @@ Class Reports
             'get_desc' => function () {
                 return "...";
             },
-            'render' => function ($self) {
+            'render' => function ($report, $request) {
 
                 global $wpdb;
 
@@ -220,7 +225,7 @@ Class Reports
             'get_desc' => function () {
                 return "Comments and comment meta by user and post type.";
             },
-            'render' => function ($self) {
+            'render' => function ($report, $request) {
 
                 global $wpdb;
                 echo SQL::render_table_counts( [ $wpdb->comments, $wpdb->commentmeta ] );
@@ -286,8 +291,6 @@ Class Reports
             return Report::link($report);
         }, $reports));
     }
-
-
 }
 
 /**
@@ -347,18 +350,55 @@ Class Report
     /**
      * Invokes the callable render index of $report and returns what it prints.
      *
+     * $request is likely $_GET on a single report page, but on a page
+     * showing multiple reports, we'll parse $_GET to give the report only
+     * the report specific settings which are likely serialized in an array.
+     * This is why you do not use $_GET within the report (it won't work on
+     * pages showing multiple reports).
+     *
      * @param array $report
      * @param array $request
      * @return string
      */
     public static function render(array $report, array $request = [])
     {
-
         ob_start();
 
         if (isset($report['render']) && is_callable($report['render'])) {
             call_user_func_array($report['render'], [$report, $request]);
+        } else if ( isset( $report['template'] ) && file_exists( $report['template'] ) ) {
+            include $report['template'];
         }
+
+        return ob_get_clean();
+    }
+
+    /**
+     * You can optionally use this to render settings inside your
+     * rendering function of your report.
+     *
+     * @param $report
+     * @param $func
+     * @return false|string
+     */
+    public static function render_settings_form( $report, $func ){
+
+        ob_start();
+
+        $p = WP_DB_Analyzer_Plugin::get_instance();
+        $a = $p->get_reports_url();
+
+        echo '<form action="' . esc_attr( $a ) . '" method="get" class="wpdba-settings-form" data-report="' . esc_attr( @$report['id'] ) . '">';
+
+        echo '<input type="hidden" name="page" value="' . $p->settings['menu_slug'] . '">';
+        echo '<input type="hidden" name="report" value="' . esc_attr( @$report['id'] ) . '">';
+
+        // callback should echo its output
+        if ( is_object( $func ) && is_callable( $func ) ) {
+            call_user_func( $func );
+        }
+
+        echo '</form>';
 
         return ob_get_clean();
     }
@@ -369,7 +409,7 @@ Class Report
      * @param array $report
      * @return string
      */
-    public static function get_link(array $report)
+    public static function get_url(array $report)
     {
         return WP_DB_Analyzer_Plugin::get_instance()->get_report_url(@$report['id']);
     }
@@ -385,7 +425,7 @@ Class Report
 
         $desc = self::get_description($report);
 
-        return '<a href="' . esc_url(self::get_link($report)) . '" title="' . esc_attr($desc) . '">' . sanitize_text_field(@$report['title']) . '</a>';
+        return '<a href="' . esc_url(self::get_url($report)) . '" title="' . esc_attr($desc) . '">' . sanitize_text_field(@$report['title']) . '</a>';
     }
 
     /**

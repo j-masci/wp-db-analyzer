@@ -67,7 +67,7 @@ Class SQL
         $matrix = new Matrix();
 
         foreach ($posts as $post) {
-            $matrix->set( $post->post_status, $post->post_type, $matrix->get_incrementer() );
+            $matrix->set( $post->post_status, $post->post_type, $matrix::get_incrementer() );
         }
 
         $matrix->set_row_totals( $matrix::get_array_summer() );
@@ -81,23 +81,34 @@ Class SQL
     }
 
     /**
+     * todo: accepting generic date format forces us to query all posts and use php to group which is most likely
+     * ok but I don't know the performance implications if we had say 1m rows. It might be worth looking into
+     * casting the date in SQL and grouping by that but I don't know the differences between php and sql
+     * date formatting.
+     *
+     * todo: timezone...
+     *
+     * @param $date_format
      * @return Matrix
      */
-    public static function post_date_report(){
+    public static function post_date_report( $date_format = "Y-m-d" ){
 
         global $wpdb;
 
         // best to use group by here and let SQL do the hard work since there
         // could be 1m+ rows otherwise.
-        // todo: I think this query is returning what we want but i'm not entirely sure
-        $q = "SELECT post_date, post_type, count(*) AS count FROM {$wpdb->posts} GROUP BY CAST(post_date AS DATE), post_type ORDER BY post_date DESC ";
+        $q = "SELECT post_date, post_type FROM {$wpdb->posts} ORDER BY post_date ASC";
 
         $rows = $wpdb->get_results( $q );
 
         $matrix = new Matrix();
 
         foreach ($rows as $row) {
-            $matrix->set( @$row->post_type, format_date_time_string( @$row->post_date, "Y-m-d" ), @$row->count );
+
+            // date format can be user input and can easily contain xxs.
+            // sanitizing the resulting date string should avoid breaking valid date formats using special characters.
+            $date = sanitize_text_field( format_date_time_string( $row->post_date, $date_format ) );
+            $matrix->set( $date, @$row->post_type, $matrix::get_incrementer( 1 ) );
         }
 
         $matrix->set_row_totals( $matrix::get_array_summer() );
@@ -174,7 +185,7 @@ Class SQL
                     // the table data will look odd if users have more than 1 role.
                     foreach ( $user->roles as $role ) {
                         foreach ( $user_meta_matrix->get_row( $user->ID ) as $meta_key => $nothing ) {
-                            $matrix->set( $meta_key, $role, $matrix->get_incrementer() );
+                            $matrix->set( $meta_key, $role, $matrix::get_incrementer() );
                         }
                     }
                 }
@@ -217,7 +228,7 @@ Class SQL
             // number of hours until this transient expires.
             $hours = $t_expires > 0 ? (int) floor( ( $t_expires - $now ) / 3600 ) : 0;
 
-            $matrix->set( $hours, "transients_count", $matrix->get_incrementer() );
+            $matrix->set( $hours, "transients_count", $matrix::get_incrementer() );
         }
 
         $matrix->sort_rows( function( $keys ) {
