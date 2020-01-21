@@ -2,6 +2,8 @@
 
 namespace WP_DB_Analyzer;
 
+// todo: DELETE THIS class and replaces usages with the new composer package
+
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 /**
