@@ -7,7 +7,7 @@ namespace WP_DB_Analyzer;
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-$plugin = WP_DB_Analyzer_Plugin::get_instance();
+$plugin = Plugin::get_instance();
 
 $report_id = @$_GET['report'];
 

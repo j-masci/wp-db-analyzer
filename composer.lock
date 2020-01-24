@@ -1,0 +1,115 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "bec6bc84884d174ac7486fc9891a4d93",
+    "packages": [
+        {
+            "name": "jmasci/component-template",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/j-masci/component-template.git",
+                "reference": "79a641726a3e8bf4426dcc74cf2b1078c23730e6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/j-masci/component-template/zipball/79a641726a3e8bf4426dcc74cf2b1078c23730e6",
+                "reference": "79a641726a3e8bf4426dcc74cf2b1078c23730e6",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "JMasci\\ComponentTemplate\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "authors": [
+                {
+                    "name": "Joel Masci",
+                    "email": "masci.joel@gmail.com"
+                }
+            ],
+            "description": "Base classes for creating flexible HTML rendering templates consisting of overridable callable components.",
+            "time": "2020-01-24T22:51:24+00:00"
+        },
+        {
+            "name": "jmasci/html-table",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/j-masci/html-table.git",
+                "reference": "953dbcdeb288717edfdfdcd5c79ea735bddf64f4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/j-masci/html-table/zipball/953dbcdeb288717edfdfdcd5c79ea735bddf64f4",
+                "reference": "953dbcdeb288717edfdfdcd5c79ea735bddf64f4",
+                "shasum": ""
+            },
+            "require": {
+                "jmasci/component-template": "dev-master"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "JMasci\\HtmlTable\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "authors": [
+                {
+                    "name": "Joel Masci",
+                    "email": "masci.joel@gmail.com"
+                }
+            ],
+            "description": "flexible HTML table rendering class using git://j-masci/component-template",
+            "time": "2020-01-24T22:16:07+00:00"
+        },
+        {
+            "name": "jmasci/matrix-builder",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/j-masci/php-matrix-builder.git",
+                "reference": "d0e96e485005c71d2fa0794f82b527ff31eea66f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/j-masci/php-matrix-builder/zipball/d0e96e485005c71d2fa0794f82b527ff31eea66f",
+                "reference": "d0e96e485005c71d2fa0794f82b527ff31eea66f",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "JMasci\\MatrixBuilder\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "authors": [
+                {
+                    "name": "Joel Masci",
+                    "email": "masci.joel@gmail.com"
+                }
+            ],
+            "description": "Builds a matrix dynamically",
+            "time": "2020-01-24T22:40:14+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {
+        "jmasci/component-template": 20,
+        "jmasci/matrix-builder": 20,
+        "jmasci/html-table": 20
+    },
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
+}

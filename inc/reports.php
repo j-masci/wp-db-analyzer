@@ -115,7 +115,7 @@ Class Reports
 
         global $wpdb;
 
-        $p = WP_DB_Analyzer_Plugin::get_instance();
+        $p = Plugin::get_instance();
         $report_template_path = $p->settings['report_template_path'];
         $reports = [];
 
@@ -385,7 +385,7 @@ Class Report
 
         ob_start();
 
-        $p = WP_DB_Analyzer_Plugin::get_instance();
+        $p = Plugin::get_instance();
         $a = $p->get_reports_url();
 
         echo '<form action="' . esc_attr( $a ) . '" method="get" class="wpdba-settings-form" data-report="' . esc_attr( @$report['id'] ) . '">';
@@ -411,7 +411,7 @@ Class Report
      */
     public static function get_url(array $report)
     {
-        return WP_DB_Analyzer_Plugin::get_instance()->get_report_url(@$report['id']);
+        return Plugin::get_instance()->get_report_url(@$report['id']);
     }
 
     /**

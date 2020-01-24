@@ -1,0 +1,21 @@
+{
+    "name": "jmasci/wp-database-analyzer",
+    "description": "WordPress plugin that analyzes your database",
+    "license": "GPLv2",
+    "authors": [
+        {
+            "name": "Joel Masci",
+            "email": "masci.joel@gmail.com"
+        }
+    ],
+    "require": {
+        "jmasci/component-template": "dev-master",
+        "jmasci/matrix-builder": "dev-master",
+        "jmasci/html-table": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "JMasci\\": "autoload/"
+        }
+    }
+}

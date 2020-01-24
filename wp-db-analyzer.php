@@ -20,18 +20,17 @@
 
 namespace WP_DB_Analyzer;
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if (!defined('ABSPATH')) exit;
 
 define('WP_DB_ANALYZER_DIR', dirname(__FILE__));
-define( 'WP_DB_ANALYZER_URL', plugins_url( 'wp-database-analyzer' ) );
+define('WP_DB_ANALYZER_URL', plugins_url('wp-database-analyzer'));
 
 /**
- * Bootstraps the plugin, handles the settings, and does a few
- * other things.
+ * Handles settings, bootstraps the plugin, etc.
  *
- * Class WP_DB_Analyzer_Plugin
+ * Class Plugin
  */
-Class WP_DB_Analyzer_Plugin
+Class Plugin
 {
     /**
      * Plugin version
@@ -69,11 +68,8 @@ Class WP_DB_Analyzer_Plugin
      */
     public function __construct()
     {
-
-        $this->includes( 1 );
-
         // rtrim might be redundant
-        $path = rtrim( dirname( __FILE__ ), '/' );
+        $path = rtrim(dirname(__FILE__), '/');
 
         $this->settings = [
             'menu_slug' => 'wp-database-analyzer',
@@ -82,31 +78,35 @@ Class WP_DB_Analyzer_Plugin
             'nonce_secret' => 'wpdba_secret_12371236123',
             'path' => $path,
             'dir' => 'wp-database-analyzer',
-            'url' => rtrim( plugins_url( 'wp-database-analyzer' ), '/' ),
+            'url' => rtrim(plugins_url('wp-database-analyzer'), '/'),
             'report_template_path' => $path . '/reports'
         ];
+
+        $this->includes(1);
 
         add_action('admin_menu', [$this, 'admin_menu']);
         // add_action('init', [$this, 'init']);
         // add_action('admin_init', [$this, 'admin_init']);
 
-        add_action( "wp_ajax_{$this->settings['ajax_action']}", [ $this, 'wp_ajax' ] );
+        add_action("wp_ajax_{$this->settings['ajax_action']}", [$this, 'wp_ajax']);
     }
 
     /**
      * Hooked to WP ajax
      */
-    public function wp_ajax(){
+    public function wp_ajax()
+    {
         // just include the global ajax file.
         include $this->settings['path'] . '/ajax/_global.php';
     }
 
     /**
-     * @return WP_DB_Analyzer_Plugin|null
+     * @return Plugin|null
      */
-    public static function get_instance(){
+    public static function get_instance()
+    {
 
-        if ( self::$instance ) {
+        if (self::$instance) {
             return self::$instance;
         }
 
@@ -125,13 +125,13 @@ Class WP_DB_Analyzer_Plugin
         $menu_slug = $this->settings['menu_slug'];
         // $menu_slug_settings = $menu_slug . '-settings';
 
-        add_menu_page( __("Database Analyzer",'wpda'), __("Database Analyzer",'wpda'), $cap, $menu_slug, false, 'dashicons-visibility', $this->settings['menu_position'] );
+        add_menu_page(__("Database Analyzer", 'wpda'), __("Database Analyzer", 'wpda'), $cap, $menu_slug, false, 'dashicons-visibility', $this->settings['menu_position']);
 
-        add_submenu_page( $menu_slug, __('Analyzer','wpda'), __('Analyzer','wpda'), $cap, $menu_slug, function(){
-            $this->includes( 2 );
+        add_submenu_page($menu_slug, __('Analyzer', 'wpda'), __('Analyzer', 'wpda'), $cap, $menu_slug, function () {
+            $this->includes(2);
             $this->enqueue_scripts();
             include $this->settings['path'] . '/tmpl/analyzer.php';
-        } );
+        });
 
         // settings page not needed atm
 //        add_submenu_page( $menu_slug, __('Settings','wpda'), __('Settings','wpda'), $cap, $menu_slug_settings, function(){
@@ -156,18 +156,19 @@ Class WP_DB_Analyzer_Plugin
      *
      * Not hooked onto 'admin_enqueue_scripts'. Lazy loaded instead.
      */
-    public function enqueue_scripts(){
+    public function enqueue_scripts()
+    {
 
-        if ( $this->scripts_enqueued ) {
+        if ($this->scripts_enqueued) {
             return;
         }
 
         $this->scripts_enqueued = true;
         $url = $this->settings['url'];
 
-        wp_enqueue_style( 'wp_database_analyzer_css', $url . '/css/master.css', [], self::VERSION );
+        wp_enqueue_style('wp_database_analyzer_css', $url . '/css/master.css', [], self::VERSION);
 
-        wp_enqueue_style( 'wp_database_analyzer_js', $url . '/js/main.js', [], self::VERSION );
+        wp_enqueue_style('wp_database_analyzer_js', $url . '/js/main.js', [], self::VERSION);
     }
 
     /**
@@ -182,9 +183,9 @@ Class WP_DB_Analyzer_Plugin
      *
      * @param $step
      */
-    public function includes( $step )
+    public function includes($step)
     {
-        if ( in_array( $step, $this->included_steps ) ) {
+        if (in_array($step, $this->included_steps)) {
             return;
         }
 
@@ -193,9 +194,8 @@ Class WP_DB_Analyzer_Plugin
         // prefer to use absolute paths to include files.
         $p = $this->settings['path'];
 
-        switch( $step ) {
+        switch ($step) {
             case 1:
-                // nothing so far
                 break;
             case 2:
 
@@ -214,10 +214,11 @@ Class WP_DB_Analyzer_Plugin
      *
      * @return string
      */
-    public function get_reports_url(){
-        return add_query_arg( [
+    public function get_reports_url()
+    {
+        return add_query_arg([
             'page' => $this->settings['menu_slug']
-        ], admin_url('admin.php') );
+        ], admin_url('admin.php'));
     }
 
     /**
@@ -226,14 +227,17 @@ Class WP_DB_Analyzer_Plugin
      * @param $report_id
      * @return string
      */
-    public function get_report_url( $report_id ) {
+    public function get_report_url($report_id)
+    {
         // note: $_GET['report'] is used into other places. You can't change 'report'
         // only here.
-        return add_query_arg( [
+        return add_query_arg([
             'page' => $this->settings['menu_slug'],
-            'report' => sanitize_text_field( $report_id ),
-        ], admin_url('admin.php') );
+            'report' => sanitize_text_field($report_id),
+        ], admin_url('admin.php'));
     }
 }
 
-WP_DB_Analyzer_Plugin::get_instance();
+include __DIR__ . '/vendor/autoload.php';
+
+Plugin::get_instance();

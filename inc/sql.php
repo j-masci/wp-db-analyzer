@@ -2,7 +2,7 @@
 
 namespace WP_DB_Analyzer;
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if (!defined('ABSPATH')) exit;
 
 /**
  * Holds static methods for retrieving and building report
@@ -18,12 +18,13 @@ Class SQL
      * @param $table
      * @return int
      */
-    public static function count_rows_in_table( $table ) {
+    public static function count_rows_in_table($table)
+    {
 
         global $wpdb;
 
         // todo: catch error if table does not exist and maybe return 0 ?
-        return (int) $wpdb->get_var( "SELECT count(*) AS count FROM " . esc_sql( $table ) . ";" );
+        return (int)$wpdb->get_var("SELECT count(*) AS count FROM " . esc_sql($table) . ";");
     }
 
     /**
@@ -35,8 +36,9 @@ Class SQL
      * @param array $database_tables
      * @return string
      */
-    public static function render_table_counts( array $database_tables ) {
-        return render_table( null, self::count_table_records_report( $database_tables )->convert_to_record_set_with_headings(), [
+    public static function render_table_counts(array $database_tables)
+    {
+        return render_table(null, self::count_table_records_report($database_tables)->convert_to_record_set_with_headings(), [
             'skip_header' => true
         ]);
     }
@@ -45,12 +47,13 @@ Class SQL
      * @param array $database_tables
      * @return Matrix
      */
-    public static function count_table_records_report( array $database_tables ) {
+    public static function count_table_records_report(array $database_tables)
+    {
 
         $matrix = new Matrix();
 
-        foreach ( $database_tables as $table ) {
-            $matrix->set( "Records", sanitize_text_field( $table ), self::count_rows_in_table( $table ) );
+        foreach ($database_tables as $table) {
+            $matrix->set("Records", sanitize_text_field($table), self::count_rows_in_table($table));
         }
 
         return $matrix;
@@ -67,15 +70,15 @@ Class SQL
         $matrix = new Matrix();
 
         foreach ($posts as $post) {
-            $matrix->set( $post->post_status, $post->post_type, $matrix::get_incrementer() );
+            $matrix->set($post->post_status, $post->post_type, $matrix::get_incrementer());
         }
 
-        $matrix->set_row_totals( $matrix::get_array_summer() );
-        $matrix->set_column_totals( $matrix::get_array_summer() );
+        $matrix->set_row_totals($matrix::get_array_summer());
+        $matrix->set_column_totals($matrix::get_array_summer());
 
-        $matrix->sort_columns( function( $keys ) {
-            return [ 'page', 'post', 'attachment' ];
-        } );
+        $matrix->sort_columns(function ($keys) {
+            return ['page', 'post', 'attachment'];
+        });
 
         return $matrix;
     }
@@ -91,7 +94,8 @@ Class SQL
      * @param $date_format
      * @return Matrix
      */
-    public static function post_date_report( $date_format = "Y-m-d" ){
+    public static function post_date_report($date_format = "Y-m-d")
+    {
 
         global $wpdb;
 
@@ -99,7 +103,7 @@ Class SQL
         // could be 1m+ rows otherwise.
         $q = "SELECT post_date, post_type FROM {$wpdb->posts} ORDER BY post_date ASC";
 
-        $rows = $wpdb->get_results( $q );
+        $rows = $wpdb->get_results($q);
 
         $matrix = new Matrix();
 
@@ -107,16 +111,16 @@ Class SQL
 
             // date format can be user input and can easily contain xxs.
             // sanitizing the resulting date string should avoid breaking valid date formats using special characters.
-            $date = sanitize_text_field( format_date_time_string( $row->post_date, $date_format ) );
-            $matrix->set( $date, @$row->post_type, $matrix::get_incrementer( 1 ) );
+            $date = sanitize_text_field(format_date_time_string($row->post_date, $date_format));
+            $matrix->set($date, @$row->post_type, $matrix::get_incrementer(1));
         }
 
-        $matrix->set_row_totals( $matrix::get_array_summer() );
-        $matrix->set_column_totals( $matrix::get_array_summer() );
+        $matrix->set_row_totals($matrix::get_array_summer());
+        $matrix->set_column_totals($matrix::get_array_summer());
 
-        $matrix->sort_rows( function( $keys ) {
-            return [ 'page', 'post', 'attachment' ];
-        } );
+        $matrix->sort_rows(function ($keys) {
+            return ['page', 'post', 'attachment'];
+        });
 
         return $matrix;
     }
@@ -124,7 +128,8 @@ Class SQL
     /**
      * @return Matrix
      */
-    public static function post_meta_report(){
+    public static function post_meta_report()
+    {
 
         global $wpdb;
 
@@ -135,20 +140,20 @@ Class SQL
         $q .= "INNER JOIN {$wpdb->posts} AS p ON p.ID = pm.post_id ";
         $q .= "GROUP BY p.post_type, pm.meta_key ";
 
-        $rows = $wpdb->get_results( $q );
+        $rows = $wpdb->get_results($q);
 
         $matrix = new Matrix();
 
         foreach ($rows as $row) {
-            $matrix->set( $row->meta_key, $row->post_type, $row->count );
+            $matrix->set($row->meta_key, $row->post_type, $row->count);
         }
 
-        $matrix->set_row_totals( $matrix::get_array_summer() );
-        $matrix->set_column_totals( $matrix::get_array_summer() );
+        $matrix->set_row_totals($matrix::get_array_summer());
+        $matrix->set_column_totals($matrix::get_array_summer());
 
-        $matrix->sort_columns( function( $keys ) {
-            return [ 'page', 'post', 'attachment' ];
-        } );
+        $matrix->sort_columns(function ($keys) {
+            return ['page', 'post', 'attachment'];
+        });
 
         return $matrix;
     }
@@ -156,47 +161,48 @@ Class SQL
     /**
      * @return Matrix
      */
-    public static function user_meta_report(){
+    public static function user_meta_report()
+    {
 
         global $wpdb;
 
         // hit post meta table once via sql then we'll loop through it in php
-        $user_meta = $wpdb->get_results( "SELECT user_id, meta_key FROM {$wpdb->usermeta} ORDER BY umeta_id" );
+        $user_meta = $wpdb->get_results("SELECT user_id, meta_key FROM {$wpdb->usermeta} ORDER BY umeta_id");
 
         $user_meta_matrix = new Matrix();
 
-        foreach ( $user_meta as $user_meta_record ) {
-            $user_meta_matrix->set( $user_meta_record->user_id, $user_meta_record->meta_key, null );
+        foreach ($user_meta as $user_meta_record) {
+            $user_meta_matrix->set($user_meta_record->user_id, $user_meta_record->meta_key, null);
         }
 
         $matrix = new Matrix();
 
         // passing in an empty array to this returns no users instead of all of them.
-        $users = new \WP_User_Query( [
+        $users = new \WP_User_Query([
             'nothing' => 'nothing'
         ]);
 
         // todo: this loop could get too large. Probably some SQL solution but the issue we have to address is the serialized user roles.
-        if ( ! empty( $users->get_results() ) ) {
-            foreach ( $users->get_results() as $user ) {
-                if ( is_array( $user->roles ) ) {
+        if (!empty($users->get_results())) {
+            foreach ($users->get_results() as $user) {
+                if (is_array($user->roles)) {
 
                     // most users have one role but its possible to have more than 1.
                     // the table data will look odd if users have more than 1 role.
-                    foreach ( $user->roles as $role ) {
-                        foreach ( $user_meta_matrix->get_row( $user->ID ) as $meta_key => $nothing ) {
-                            $matrix->set( $meta_key, $role, $matrix::get_incrementer() );
+                    foreach ($user->roles as $role) {
+                        foreach ($user_meta_matrix->get_row($user->ID) as $meta_key => $nothing) {
+                            $matrix->set($meta_key, $role, $matrix::get_incrementer());
                         }
                     }
                 }
             }
         }
 
-        $matrix->set_row_totals( $matrix::get_array_summer() );
-        $matrix->set_column_totals( $matrix::get_array_summer() );
+        $matrix->set_row_totals($matrix::get_array_summer());
+        $matrix->set_column_totals($matrix::get_array_summer());
 
-        $matrix->sort_columns( function( $keys ) {
-            return [ 'administrator', 'editor', 'author', 'contributor', 'subscriber' ];
+        $matrix->sort_columns(function ($keys) {
+            return ['administrator', 'editor', 'author', 'contributor', 'subscriber'];
         });
 
         return $matrix;
@@ -207,7 +213,8 @@ Class SQL
      *
      * @return Matrix
      */
-    public static function transients_report(){
+    public static function transients_report()
+    {
 
         // SELECT *  FROM `wpjm_options` WHERE `option_name` LIKE '_transient_%' AND `option_name` NOT LIKE '_transient_timeout_%'
         //
@@ -220,29 +227,29 @@ Class SQL
 
         $matrix = new Matrix();
 
-        foreach ( $t_values as $t_name => $t_obj ) {
+        foreach ($t_values as $t_name => $t_obj) {
 
             // timestamp when transient expires
-            $t_expires = isset( $t_timeouts[$t_name]->option_value ) ? (int) $t_timeouts[$t_name]->option_value : 0;
+            $t_expires = isset($t_timeouts[$t_name]->option_value) ? (int)$t_timeouts[$t_name]->option_value : 0;
 
             // number of hours until this transient expires.
-            $hours = $t_expires > 0 ? (int) floor( ( $t_expires - $now ) / 3600 ) : 0;
+            $hours = $t_expires > 0 ? (int)floor(($t_expires - $now) / 3600) : 0;
 
-            $matrix->set( $hours, "transients_count", $matrix::get_incrementer() );
+            $matrix->set($hours, "transients_count", $matrix::get_incrementer());
         }
 
-        $matrix->sort_rows( function( $keys ) {
-            sort( $keys, SORT_NUMERIC );
+        $matrix->sort_rows(function ($keys) {
+            sort($keys, SORT_NUMERIC);
             return $keys;
         });
 
-        $matrix->set( "total_count", "transients_count", array_reduce( $matrix->get_column( 'transients_count' ), function( $carry, $count ){
-            return $carry+= $count;
-        }, 0 ) );
+        $matrix->set("total_count", "transients_count", array_reduce($matrix->get_column('transients_count'), function ($carry, $count) {
+            return $carry += $count;
+        }, 0));
 
-        $matrix->sort_rows( function( $keys ){
-            unset( $keys['total'] );
-            return array_merge( $keys, [ 'total' ] );
+        $matrix->sort_rows(function ($keys) {
+            unset($keys['total']);
+            return array_merge($keys, ['total']);
         });
 
         return $matrix;
@@ -254,7 +261,8 @@ Class SQL
      *
      * @return Matrix
      */
-    public static function term_meta_report(){
+    public static function term_meta_report()
+    {
 
         global $wpdb;
 
@@ -266,22 +274,22 @@ Class SQL
         ORDER BY tt.taxonomy ASC, t.name ASC        
         ";
 
-        $rows = $wpdb->get_results( $q );
+        $rows = $wpdb->get_results($q);
 
         $matrix = new Matrix();
 
         foreach ($rows as $row) {
             $t = $row->taxonomy;
-            $n = sanitize_text_field( $row->name );
-            $matrix->set( "[$t] $n", $row->meta_key, $row->count );
+            $n = sanitize_text_field($row->name);
+            $matrix->set("[$t] $n", $row->meta_key, $row->count);
         }
 
-        $matrix->set_row_totals( $matrix::get_array_summer() );
-        $matrix->set_column_totals( $matrix::get_array_summer() );
+        $matrix->set_row_totals($matrix::get_array_summer());
+        $matrix->set_column_totals($matrix::get_array_summer());
 
-        $matrix->sort_columns( function( $keys ) {
-            return [ 'page', 'post', 'attachment' ];
-        } );
+        $matrix->sort_columns(function ($keys) {
+            return ['page', 'post', 'attachment'];
+        });
 
         return $matrix;
     }
@@ -292,35 +300,36 @@ Class SQL
      *
      * @return Matrix
      */
-    public static function term_taxonomy_report(){
+    public static function term_taxonomy_report()
+    {
 
         global $wpdb;
         global $wp_taxonomies;
 
-        $r = $wpdb->get_results( "SELECT *, count(*) AS count FROM $wpdb->term_taxonomy GROUP BY taxonomy ORDER BY taxonomy;" );
+        $r = $wpdb->get_results("SELECT *, count(*) AS count FROM $wpdb->term_taxonomy GROUP BY taxonomy ORDER BY taxonomy;");
 
         $matrix = new Matrix();
 
-        if ( $r ) {
-            foreach ( $r as $row ) {
+        if ($r) {
+            foreach ($r as $row) {
 
                 // the post types the taxonomy is registered to
-                $object_types = isset( $wp_taxonomies[$row->taxonomy]->object_type ) && is_array( $wp_taxonomies[$row->taxonomy]->object_type ) ? $wp_taxonomies[$row->taxonomy]->object_type : [];
-                $object_types_str = implode( ", ", $object_types );
+                $object_types = isset($wp_taxonomies[$row->taxonomy]->object_type) && is_array($wp_taxonomies[$row->taxonomy]->object_type) ? $wp_taxonomies[$row->taxonomy]->object_type : [];
+                $object_types_str = implode(", ", $object_types);
 
-                $matrix->set( "count", $row->taxonomy, $row->count );
-                $matrix->set( "object_types", $row->taxonomy, $object_types_str );
+                $matrix->set("count", $row->taxonomy, $row->count);
+                $matrix->set("object_types", $row->taxonomy, $object_types_str);
             }
         }
 
-        $matrix->set_row_totals( function( $row, $key ){
+        $matrix->set_row_totals(function ($row, $key) {
 
-            if ( $key === "count" ) {
-                return array_sum( $row );
+            if ($key === "count") {
+                return array_sum($row);
             }
 
             return "N/A";
-        } );
+        });
 
         return $matrix;
     }
@@ -328,7 +337,8 @@ Class SQL
     /**
      * @return Matrix
      */
-    public static function term_relationships_report(){
+    public static function term_relationships_report()
+    {
 
         global $wpdb;
 
@@ -342,21 +352,21 @@ Class SQL
         ORDER BY tt.taxonomy ASC, t.name ASC
         ";
 
-        $r = $wpdb->get_results( $q );
+        $r = $wpdb->get_results($q);
 
         $matrix = new Matrix();
 
-        foreach ( $r as $row ) {
-            $n = sanitize_text_field( $row->name );
+        foreach ($r as $row) {
+            $n = sanitize_text_field($row->name);
             $t = $row->taxonomy;
-            $matrix->set( "[$t] $n", $row->post_type, $row->count );
+            $matrix->set("[$t] $n", $row->post_type, $row->count);
         }
 
-        $matrix->set_column_totals( $matrix::get_array_summer() );
-        $matrix->set_row_totals( $matrix::get_array_summer() );
+        $matrix->set_column_totals($matrix::get_array_summer());
+        $matrix->set_row_totals($matrix::get_array_summer());
 
-        $matrix->sort_rows( function( $keys ){
-            asort( $keys );
+        $matrix->sort_rows(function ($keys) {
+            asort($keys);
             return $keys;
         });
 
@@ -366,7 +376,8 @@ Class SQL
     /**
      * @return Matrix
      */
-    public static function comments_report(){
+    public static function comments_report()
+    {
 
         global $wpdb;
 
@@ -378,15 +389,15 @@ Class SQL
         ORDER BY p.post_type ASC, u.ID                 
         ";
 
-        $r = $wpdb->get_results( $q );
+        $r = $wpdb->get_results($q);
 
         $matrix = new Matrix();
 
-        foreach ( $r as $row ) {
+        foreach ($r as $row) {
 
             // check user exists or did exist when the comment was saved.
-            if ( $row->user_id && $row->user_id > 0 ) {
-                if ( $row->user_login ) {
+            if ($row->user_id && $row->user_id > 0) {
+                if ($row->user_login) {
                     // unsure if the display name can be empty.
                     $user = $row->display_name ? $row->display_name : '[user_without_a_display_name]';
                 } else {
@@ -396,11 +407,11 @@ Class SQL
                 $user = "[no_user]";
             }
 
-            $matrix->set( sanitize_text_field( $user ), $row->post_type, $row->count );
+            $matrix->set(sanitize_text_field($user), $row->post_type, $row->count);
         }
 
-        $matrix->set_column_totals( $matrix::get_array_summer() );
-        $matrix->set_row_totals( $matrix::get_array_summer() );
+        $matrix->set_column_totals($matrix::get_array_summer());
+        $matrix->set_row_totals($matrix::get_array_summer());
 
         return $matrix;
     }
@@ -408,7 +419,8 @@ Class SQL
     /**
      * @return Matrix
      */
-    public static function comment_meta_report(){
+    public static function comment_meta_report()
+    {
 
         global $wpdb;
 
@@ -420,15 +432,15 @@ Class SQL
         ORDER BY c.comment_ID ASC         
         ";
 
-        $r = $wpdb->get_results( $q );
+        $r = $wpdb->get_results($q);
 
         $matrix = new Matrix();
 
-        foreach ( $r as $row ) {
-            $matrix->set( $row->meta_key, $row->post_type, $row->count );
+        foreach ($r as $row) {
+            $matrix->set($row->meta_key, $row->post_type, $row->count);
         }
 
-        $matrix->set_column_totals( $matrix::get_array_summer() );
+        $matrix->set_column_totals($matrix::get_array_summer());
 
         return $matrix;
     }
