@@ -25,8 +25,7 @@ function render_table( $columns, array $rows, array $args = [], $template = null
  * @return Template
  */
 function get_table_template_empty(){
-    $template = new Template( 'table' );
-    return $template;
+    return new Template( 'table' );
 }
 
 /**
@@ -40,7 +39,7 @@ function get_table_template(){
         $cls = [ 'wpdba-table', 'wpdba-default', @$table->args['add_class'] ];
         ?>
         <div class="<?= esc_attr( implode( " ", array_filter( $cls ) ) ); ?>">
-            <?php $this->invoke( 'table_tag' ); ?>
+            <?php $this->invoke( 'table_tag', $table ); ?>
         </div>
         <?php
     });
@@ -49,10 +48,10 @@ function get_table_template(){
         echo '<table>';
 
         if ( ! @$table->args['skip_header'] ) {
-            $this->invoke( 'thead' );
+            $this->invoke( 'thead', $table );
         }
 
-        $this->invoke( 'tbody' );
+        $this->invoke( 'tbody', $table );
         echo '</table>';
     });
 
@@ -60,7 +59,7 @@ function get_table_template(){
         echo '<thead>';
         echo '<tr>';
         foreach ( $table->cols as $col_index => $col_label ) {
-            $this->invoke( 'th', $col_index );
+            $this->invoke( 'th', $table, $col_index );
         }
         echo '</tr>';
         echo '</thead>';
@@ -75,7 +74,7 @@ function get_table_template(){
     $template->set( 'tbody', function( $table ) {
         echo '<tbody>';
         foreach ( $table->rows as $row_index => $row ) {
-            $this->invoke( 'tbody_row', $row_index );
+            $this->invoke( 'tbody_row', $table, $row_index );
         }
         echo '</tbody>';
     });
@@ -84,18 +83,26 @@ function get_table_template(){
         echo '<tr>';
         foreach ( $table->cols as $col_index => $col_label ) {
             // pass indexes only
-            $this->invoke( 'td', $row_index, $col_index );
+            $this->invoke( 'td', $table, $row_index, $col_index );
         }
         echo '</tr>';
     });
 
     // accepts indexes, not the value it needs to render.
     $template->set( 'td', function( $table, $row_index, $col_index ) {
+
+        var_dump( $row_index );
+        echo "\r\n";
+        var_dump( $col_index );
+
         // note: $col_index is not guaranteed to bet set, unlike $row_index.
-        $value = is_scalar( @$table[$row_index][$col_index] ) ? @$table[$row_index][$col_index] : "";
+        $value = is_scalar( @$table->rows[$row_index][$col_index] ) ? @$table->rows[$row_index][$col_index] : "";
         $class = 'col-' . $col_index;
 
-        echo '<td class="' . esc_attr( $class ) . '">' . htmlspecialchars( $value ) . '</td>';
+        $sanitize = isset( $table->args['sanitize_cell_data'] ) ? $table->args['sanitize_cell_data'] : true;
+        $_value = $sanitize ? htmlspecialchars( $value ) : $value;
+
+        echo '<td class="' . esc_attr( $class ) . '">' . htmlspecialchars( $_value ) . '</td>';
     });
 
     return $template;
