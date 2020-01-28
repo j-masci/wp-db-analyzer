@@ -1,6 +1,7 @@
 /**
- * As of now, we don't require javascript.
+ * As of now, (I am happy that...) we don't require javascript.
  */
-(function($){
-    $(document).ready(function(){});
+(function ($) {
+    $(document).ready(function () {
+    });
 })(jQuery);

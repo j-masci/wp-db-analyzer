@@ -1,14 +1,17 @@
 <?php
 /**
- * Plugin Name: WP Database Analyzer
- * Plugin URI:  https://github.com/j-masci/wp-db-analyzer
- * Description: Displays useful information about your WordPress database
+ * Database Analyzer
+ *
+ * Plugin Name: Database Analyzer
+ * Plugin URI:  https://wordpress.org/plugins/database-analyzer/
+ * Description: Reports on the size and structure of your database. Shows how your data is distributed among your database tables.
  * Version:     1.0
  * Author:      Joel Masci
  * Author URI:  https://github.com/j-masci
  * License:     GPLv2 or later
  * License URI: http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- * Text Domain: wp-db-analyzer
+ * Text Domain: database-analyzer
+ * Domain Path: /languages
  *
  * This program is free software; you can redistribute it and/or modify it under the terms of the GNU
  * General Public License version 2, as published by the Free Software Foundation. You may NOT assume
@@ -18,20 +21,19 @@
  * even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-namespace WP_DB_Analyzer;
+namespace Database_Analyzer;
 
-if (!defined('ABSPATH')) exit;
+if ( ! defined( 'ABSPATH' ) ) exit;
 
-define('WP_DB_ANALYZER_DIR', dirname(__FILE__));
-define('WP_DB_ANALYZER_URL', plugins_url('wp-database-analyzer'));
+define( 'WP_DB_ANALYZER_DIR', dirname( __FILE__ ) );
+define( 'WP_DB_ANALYZER_URL', plugins_url( 'wp-database-analyzer' ) );
 
 /**
- * Handles settings, bootstraps the plugin, etc.
+ * Settings/Bootstrap/etc.
  *
  * Class Plugin
  */
-Class Plugin
-{
+Class Plugin {
     /**
      * Plugin version
      */
@@ -43,7 +45,7 @@ Class Plugin
     public $settings;
 
     /**
-     * Stores the singleton instance of self.
+     * Singleton instance
      *
      * @var null|self
      */
@@ -66,47 +68,30 @@ Class Plugin
     /**
      * WP_DB_Analyzer_Plugin constructor.
      */
-    public function __construct()
-    {
+    public function __construct() {
         // rtrim might be redundant
-        $path = rtrim(dirname(__FILE__), '/');
+        $path = rtrim( dirname( __FILE__ ), '/' );
 
         $this->settings = [
             'menu_slug' => 'wp-database-analyzer',
             'menu_position' => 90,
-            'ajax_action' => 'wpdba_ajax',
-            'nonce_secret' => 'wpdba_secret_12371236123',
             'path' => $path,
             'dir' => 'wp-database-analyzer',
-            'url' => rtrim(plugins_url('wp-database-analyzer'), '/'),
-            'report_template_path' => $path . '/reports'
+            'url' => rtrim( plugins_url( 'wp-database-analyzer' ), '/' ),
+            'report_template_path' => $path . '/tmpl/reports'
         ];
 
-        $this->includes(1);
+        $this->includes( 1 );
 
-        add_action('admin_menu', [$this, 'admin_menu']);
-        // add_action('init', [$this, 'init']);
-        // add_action('admin_init', [$this, 'admin_init']);
-
-        add_action("wp_ajax_{$this->settings['ajax_action']}", [$this, 'wp_ajax']);
-    }
-
-    /**
-     * Hooked to WP ajax
-     */
-    public function wp_ajax()
-    {
-        // just include the global ajax file.
-        include $this->settings['path'] . '/ajax/_global.php';
+        add_action( 'admin_menu', [ $this, 'admin_menu' ] );
     }
 
     /**
      * @return Plugin|null
      */
-    public static function get_instance()
-    {
+    public static function get_instance() {
 
-        if (self::$instance) {
+        if ( self::$instance ) {
             return self::$instance;
         }
 
@@ -119,21 +104,21 @@ Class Plugin
      *
      * @hooked 'admin_menu'
      */
-    public function admin_menu()
-    {
+    public function admin_menu() {
+
         $cap = 'manage_options';
-        $menu_slug = $this->settings['menu_slug'];
-        // $menu_slug_settings = $menu_slug . '-settings';
+        $menu_slug = $this->settings[ 'menu_slug' ];
 
-        add_menu_page(__("Database Analyzer", 'wpda'), __("Database Analyzer", 'wpda'), $cap, $menu_slug, false, 'dashicons-visibility', $this->settings['menu_position']);
+        add_menu_page( __( "Database Analyzer", 'wpda' ), __( "Database Analyzer", 'wpda' ), $cap, $menu_slug, false, 'dashicons-visibility', $this->settings[ 'menu_position' ] );
 
-        add_submenu_page($menu_slug, __('Analyzer', 'wpda'), __('Analyzer', 'wpda'), $cap, $menu_slug, function () {
-            $this->includes(2);
+        add_submenu_page( $menu_slug, __( 'Analyzer', 'wpda' ), __( 'Analyzer', 'wpda' ), $cap, $menu_slug, function () {
+            $this->includes( 2 );
             $this->enqueue_scripts();
-            include $this->settings['path'] . '/tmpl/analyzer.php';
-        });
+            include $this->settings[ 'path' ] . '/tmpl/menu-pages/analyzer.php';
+        } );
 
         // settings page not needed atm
+        // $menu_slug_settings = $menu_slug . '-settings';
 //        add_submenu_page( $menu_slug, __('Settings','wpda'), __('Settings','wpda'), $cap, $menu_slug_settings, function(){
 //            $this->includes( 2 );
 //            $this->enqueue_scripts();
@@ -156,19 +141,18 @@ Class Plugin
      *
      * Not hooked onto 'admin_enqueue_scripts'. Lazy loaded instead.
      */
-    public function enqueue_scripts()
-    {
+    public function enqueue_scripts() {
 
-        if ($this->scripts_enqueued) {
+        if ( $this->scripts_enqueued ) {
             return;
         }
 
         $this->scripts_enqueued = true;
-        $url = $this->settings['url'];
+        $url = $this->settings[ 'url' ];
 
-        wp_enqueue_style('wp_database_analyzer_css', $url . '/css/master.css', [], self::VERSION);
+        wp_enqueue_style( 'wp_database_analyzer_css', $url . '/css/master.css', [], self::VERSION );
 
-        wp_enqueue_style('wp_database_analyzer_js', $url . '/js/main.js', [], self::VERSION);
+        wp_enqueue_style( 'wp_database_analyzer_js', $url . '/js/main.js', [], self::VERSION );
     }
 
     /**
@@ -183,27 +167,28 @@ Class Plugin
      *
      * @param $step
      */
-    public function includes($step)
-    {
-        if (in_array($step, $this->included_steps)) {
+    public function includes( $step ) {
+        if ( in_array( $step, $this->included_steps ) ) {
             return;
         }
 
         $this->included_steps[] = $step;
 
-        // prefer to use absolute paths to include files.
-        $p = $this->settings['path'];
+        // plugin absolute path
+        $p = $this->settings[ 'path' ];
 
-        switch ($step) {
+        switch ( $step ) {
             case 1:
                 break;
             case 2:
 
-                include $p . '/inc/utility-functions.php';
-                include $p . '/inc/sql.php';
-                include $p . '/inc/tables.php';
-                include $p . '/inc/matrix.php';
-                include $p . '/inc/reports.php';
+                include $p . '/inc/etc.php';
+                include $p . '/inc/Html_Table.php';
+                include $p . '/inc/Report_IDs.php';
+                include $p . '/inc/Reports.php';
+                include $p . '/inc/Report_Factory.php';
+                include $p . '/inc/SQL.php';
+
                 break;
             default:
         }
@@ -214,11 +199,10 @@ Class Plugin
      *
      * @return string
      */
-    public function get_reports_url()
-    {
-        return add_query_arg([
-            'page' => $this->settings['menu_slug']
-        ], admin_url('admin.php'));
+    public function get_reports_url() {
+        return add_query_arg( [
+            'page' => $this->settings[ 'menu_slug' ]
+        ], admin_url( 'admin.php' ) );
     }
 
     /**
@@ -227,14 +211,13 @@ Class Plugin
      * @param $report_id
      * @return string
      */
-    public function get_report_url($report_id)
-    {
+    public function get_report_url( $report_id ) {
         // note: $_GET['report'] is used into other places. You can't change 'report'
         // only here.
-        return add_query_arg([
-            'page' => $this->settings['menu_slug'],
-            'report' => sanitize_text_field($report_id),
-        ], admin_url('admin.php'));
+        return add_query_arg( [
+            'page' => $this->settings[ 'menu_slug' ],
+            'report' => sanitize_text_field( $report_id ),
+        ], admin_url( 'admin.php' ) );
     }
 }
 

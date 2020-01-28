@@ -1,0 +1,18 @@
+// reduce vertical spacing of form tables by a little
+.wpdba-admin-page {
+	.form-table {
+		th, td {
+			h1, h2, h3, h4, h5, h6, p {
+				&:first-child {
+					margin-top: 0;
+					padding-top: 0;
+				}
+
+				&:last-child {
+					margin-bottom: 0;
+					padding-bottom: 0;
+				}
+			}
+		}
+	}
+}

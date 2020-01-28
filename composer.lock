@@ -42,12 +42,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/j-masci/html-table.git",
-                "reference": "74bd1ed5698b70706d3960163daba8f66bcd417c"
+                "reference": "7f47ea864799492c56ec9ba441253170e707379f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/j-masci/html-table/zipball/74bd1ed5698b70706d3960163daba8f66bcd417c",
-                "reference": "74bd1ed5698b70706d3960163daba8f66bcd417c",
+                "url": "https://api.github.com/repos/j-masci/html-table/zipball/7f47ea864799492c56ec9ba441253170e707379f",
+                "reference": "7f47ea864799492c56ec9ba441253170e707379f",
                 "shasum": ""
             },
             "require": {
@@ -67,7 +67,7 @@
                 }
             ],
             "description": "flexible HTML table rendering class using git://j-masci/component-template",
-            "time": "2020-01-24T23:30:34+00:00"
+            "time": "2020-01-25T02:06:38+00:00"
         },
         {
             "name": "jmasci/matrix-builder",

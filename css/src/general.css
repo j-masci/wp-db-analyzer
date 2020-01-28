@@ -1,0 +1,11 @@
+.wpdba-admin-page .form-table th h1:first-child, .wpdba-admin-page .form-table th h2:first-child, .wpdba-admin-page .form-table th h3:first-child, .wpdba-admin-page .form-table th h4:first-child, .wpdba-admin-page .form-table th h5:first-child, .wpdba-admin-page .form-table th h6:first-child, .wpdba-admin-page .form-table th p:first-child, .wpdba-admin-page .form-table td h1:first-child, .wpdba-admin-page .form-table td h2:first-child, .wpdba-admin-page .form-table td h3:first-child, .wpdba-admin-page .form-table td h4:first-child, .wpdba-admin-page .form-table td h5:first-child, .wpdba-admin-page .form-table td h6:first-child, .wpdba-admin-page .form-table td p:first-child {
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.wpdba-admin-page .form-table th h1:last-child, .wpdba-admin-page .form-table th h2:last-child, .wpdba-admin-page .form-table th h3:last-child, .wpdba-admin-page .form-table th h4:last-child, .wpdba-admin-page .form-table th h5:last-child, .wpdba-admin-page .form-table th h6:last-child, .wpdba-admin-page .form-table th p:last-child, .wpdba-admin-page .form-table td h1:last-child, .wpdba-admin-page .form-table td h2:last-child, .wpdba-admin-page .form-table td h3:last-child, .wpdba-admin-page .form-table td h4:last-child, .wpdba-admin-page .form-table td h5:last-child, .wpdba-admin-page .form-table td h6:last-child, .wpdba-admin-page .form-table td p:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/*# sourceMappingURL=general.css.map */

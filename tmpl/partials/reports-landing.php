@@ -3,42 +3,35 @@
  * landing page where you navigate to single reports pages
  */
 
-namespace WP_DB_Analyzer;
+namespace Database_Analyzer;
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 global $wpdb;
-$reports = Reports::get_all();
+$reports = Report_Factory::build();
 $show_tables = $wpdb->get_results( "SHOW TABLES" );
 
 ?>
 
-<div class="wrap">
+<div class="wrap wpdba-admin-page">
 
     <h1>Database Analyzer</h1>
-
-    <br>
-    <hr>
-    <br>
-
-    <h2>Run Reports One At a Time</h2>
-    <p>Click on a report in the table below to run it.</p>
-    <p>The table also shows the number of rows in each table in your database.</p>
+    <p>Select a report below to run or click "Run All Reports".</p>
 
     <?php
 
     // build the HTML table data, which displays database tables
-    $html_table_data = array_map( function( $row ) use( $reports ){
+    $html_table_data = array_map( function ( $row ) use ( $reports ) {
 
         global $wpdb;
 
         // database table name
-        $table = $row && is_object( $row ) ? array_values( get_object_vars( $row ) )[0] : null;
+        $table = $row && is_object( $row ) ? array_values( get_object_vars( $row ) )[ 0 ] : null;
 
         // the html table data
         return [
             'name' => $table,
-            'records' => SQL::count_rows_in_table( $table ),
+            'records' => (int) SQL::count_rows_in_table( $table ),
             'available_reports' => Reports::link_reports( Reports::filter_by_database_table( $reports, $table ) ),
         ];
 
@@ -48,22 +41,28 @@ $show_tables = $wpdb->get_results( "SHOW TABLES" );
     $html_table_data[] = [
         'name' => 'Other Reports',
         'records' => 'N/A',
-        'available_reports' => call_user_func( function() use( $reports ){
-            return Reports::link_reports( array_filter( $reports, function( $report ) {
-                return empty( @$report['tables'] );
-            }) );
-        })
+        'available_reports' => call_user_func( function () use ( $reports ) {
+
+            return Reports::link_reports( array_filter( $reports, function ( $report ) {
+
+                return empty( @$report[ 'tables' ] );
+            } ) );
+        } )
     ];
 
-    echo render_table( null, $html_table_data, [
-        'raw_html_keys' => [ 'available_reports' ],
+    // render the html table without sanitation, it has already been done.
+    echo Html_Table::render( null, $html_table_data, [
+        'sanitize_cell_data' => false,
     ] );
 
     ?>
 
     <br>
     <h2>Run All Reports</h2>
-    <p>If your database is small enough and/or your server is powerful enough, you can run all reports in one go. On most websites, this is probably not an issue. If some reports have settings, they probably do not apply when running all reports at once.</p>
-    <p><a href="<?= Report::get_url( [ 'id' => Reports::REPORT_ID_ALL ] ); ?>" class="button button-primary">Run All Reports</a></p>
+    <p>Note: If your database is too large then your server might not be able to run all reports at once. However,
+        most websites should be fine and there is no harm in trying.</p>
+    <p>Note: Some reports can have settings which can only be modified when you run the report on its own.</p>
+    <p><a href="<?= Reports::get_url( [ 'id' => Reports::REPORT_ID_ALL ] ); ?>" class="button button-primary">Run All
+            Reports</a></p>
 
 </div>
