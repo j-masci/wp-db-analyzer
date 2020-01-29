@@ -12,3 +12,15 @@ This plugin will not:
 - Update your database in any way (except possibly to store plugin settings)
 - Optimize your website in any way.
 
+### Screenshots
+
+![Available Reports](screenshots/choose-report.jpg)
+
+![Post Status Report](screenshots/post-status-report.jpg)
+
+![Post Meta Report](screenshots/post-meta-report.jpg)
+
+![Term/Taxonomy Report](screenshots/terms-taxonomies-reports.jpg)
+
+![Post Date Report](screenshots/post-date-report.jpg)
+
