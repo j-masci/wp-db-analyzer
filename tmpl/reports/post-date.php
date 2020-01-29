@@ -61,7 +61,7 @@ echo Reports::render_settings_form( $report, function () use ( $report, $request
 
                 echo '<select name="format">';
 
-                echo '<option name="">Custom</option>';
+                echo '<option value="">Custom</option>';
 
                 array_map( function ( $format ) use ( $preset_format, $get_date_format_example ) {
 
