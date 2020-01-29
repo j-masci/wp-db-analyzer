@@ -248,7 +248,7 @@ Class SQL {
 
         global $wpdb;
 
-        $q = "
+        $q = "        
         SELECT tt.*, t.*, tm.meta_key, count(*) AS count FROM $wpdb->terms AS t
         INNER JOIN $wpdb->termmeta AS tm ON tm.term_id = t.term_id
         INNER JOIN $wpdb->term_taxonomy AS tt ON tt.term_id = t.term_id
@@ -260,10 +260,10 @@ Class SQL {
 
         $matrix = new Matrix();
 
-        foreach ( $rows as $row ) {
-            $t = $row->taxonomy;
-            $n = sanitize_text_field( $row->name );
-            $matrix->set( "[$t] $n", $row->meta_key, $row->count );
+        if ( $rows ) {
+            foreach ( $rows as $row ) {
+                $matrix->set( $row->meta_key, $row->taxonomy, $row->count );
+            }
         }
 
         $matrix->set_row_totals( $matrix::get_array_summer() );
@@ -288,12 +288,12 @@ Class SQL {
         global $wpdb;
         global $wp_taxonomies;
 
-        $r = $wpdb->get_results( "SELECT *, count(*) AS count FROM $wpdb->term_taxonomy GROUP BY taxonomy ORDER BY taxonomy;" );
+        $rows = $wpdb->get_results( "SELECT *, count(*) AS count FROM $wpdb->term_taxonomy GROUP BY taxonomy ORDER BY taxonomy;" );
 
         $matrix = new Matrix();
 
-        if ( $r ) {
-            foreach ( $r as $row ) {
+        if ( $rows ) {
+            foreach ( $rows as $row ) {
 
                 // the post types the taxonomy is registered to
                 $object_types = isset( $wp_taxonomies[ $row->taxonomy ]->object_type ) && is_array( $wp_taxonomies[ $row->taxonomy ]->object_type ) ? $wp_taxonomies[ $row->taxonomy ]->object_type : [];
@@ -333,14 +333,16 @@ Class SQL {
         ORDER BY tt.taxonomy ASC, t.name ASC
         ";
 
-        $r = $wpdb->get_results( $q );
+        $rows = $wpdb->get_results( $q );
 
         $matrix = new Matrix();
 
-        foreach ( $r as $row ) {
-            $n = sanitize_text_field( $row->name );
-            $t = $row->taxonomy;
-            $matrix->set( "[$t] $n", $row->post_type, $row->count );
+        if ( $rows ) {
+            foreach ( $rows as $row ) {
+                $n = sanitize_text_field( $row->name );
+                $t = $row->taxonomy;
+                $matrix->set( "[$t] $n", $row->post_type, $row->count );
+            }
         }
 
         $matrix->set_column_totals( $matrix::get_array_summer() );
@@ -370,25 +372,27 @@ Class SQL {
         ORDER BY p.post_type ASC, u.ID                 
         ";
 
-        $r = $wpdb->get_results( $q );
+        $rows = $wpdb->get_results( $q );
 
         $matrix = new Matrix();
 
-        foreach ( $r as $row ) {
+        if ( $rows ) {
+            foreach ( $rows as $row ) {
 
-            // check user exists or did exist when the comment was saved.
-            if ( $row->user_id && $row->user_id > 0 ) {
-                if ( $row->user_login ) {
-                    // unsure if the display name can be empty.
-                    $user = $row->display_name ? $row->display_name : '[user_without_a_display_name]';
+                // check user exists or did exist when the comment was saved.
+                if ( $row->user_id && $row->user_id > 0 ) {
+                    if ( $row->user_login ) {
+                        // unsure if the display name can be empty.
+                        $user = $row->display_name ? $row->display_name : '[user_without_a_display_name]';
+                    } else {
+                        $user = '[deleted_user]';
+                    }
                 } else {
-                    $user = '[deleted_user]';
+                    $user = "[no_user]";
                 }
-            } else {
-                $user = "[no_user]";
-            }
 
-            $matrix->set( sanitize_text_field( $user ), $row->post_type, $row->count );
+                $matrix->set( sanitize_text_field( $user ), $row->post_type, $row->count );
+            }
         }
 
         $matrix->set_column_totals( $matrix::get_array_summer() );
@@ -412,12 +416,14 @@ Class SQL {
         ORDER BY c.comment_ID ASC         
         ";
 
-        $r = $wpdb->get_results( $q );
+        $rows = $wpdb->get_results( $q );
 
         $matrix = new Matrix();
 
-        foreach ( $r as $row ) {
-            $matrix->set( $row->meta_key, $row->post_type, $row->count );
+        if ( $rows ) {
+            foreach ( $rows as $row ) {
+                $matrix->set( $row->meta_key, $row->post_type, $row->count );
+            }
         }
 
         $matrix->set_column_totals( $matrix::get_array_summer() );

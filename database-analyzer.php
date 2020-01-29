@@ -73,11 +73,11 @@ Class Plugin {
         $path = rtrim( dirname( __FILE__ ), '/' );
 
         $this->settings = [
-            'menu_slug' => 'wp-database-analyzer',
+            'menu_slug' => 'database-analyzer',
             'menu_position' => 90,
             'path' => $path,
-            'dir' => 'wp-database-analyzer',
-            'url' => rtrim( plugins_url( 'wp-database-analyzer' ), '/' ),
+            'dir' => 'database-analyzer',
+            'url' => rtrim( plugins_url( 'database-analyzer' ), '/' ),
             'report_template_path' => $path . '/tmpl/reports'
         ];
 
