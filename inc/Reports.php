@@ -42,6 +42,8 @@ Class Reports {
             return [ $body, $desc, $time ];
         } );
 
+        // $report_desc could contain a link (likely does not)
+        // $report_body is html.
         ?>
         <h2><?= sanitize_text_field( $report[ 'title' ] ); ?></h2>
         <?= $report_desc ? '<p>' . $report_desc . '</p>' : ''; ?>

@@ -65,12 +65,7 @@ Class SQL {
     }
 
     /**
-     * todo: accepting generic date format forces us to query all posts and use php to group which is most likely
-     * ok but I don't know the performance implications if we had say 1m rows. It might be worth looking into
-     * casting the date in SQL and grouping by that but I don't know the differences between php and sql
-     * date formatting.
-     *
-     * todo: timezone...
+     * todo: adjust for timezone maybe
      *
      * @param $date_format
      * @return Matrix
@@ -115,7 +110,6 @@ Class SQL {
 
         // best to use group by here and let SQL do the hard work since there
         // could be 1m+ rows otherwise.
-        // todo: I think this query is returning what we want but i'm not entirely sure
         $q = "SELECT pm.*, p.post_type, count( p.post_type ) AS count FROM {$wpdb->postmeta} AS pm ";
         $q .= "INNER JOIN {$wpdb->posts} AS p ON p.ID = pm.post_id ";
         $q .= "GROUP BY p.post_type, pm.meta_key ";
@@ -162,7 +156,8 @@ Class SQL {
             'nothing' => 'nothing'
         ] );
 
-        // todo: this loop could get too large. Probably some SQL solution but the issue we have to address is the serialized user roles.
+        // this loop could get too large in some cases, but, SQL solutions are hard due to serialization
+        // of user roles.
         if ( ! empty( $users->get_results() ) ) {
             foreach ( $users->get_results() as $user ) {
                 if ( is_array( $user->roles ) ) {
@@ -197,12 +192,10 @@ Class SQL {
     public static function transients_report() {
 
         // SELECT *  FROM `wpjm_options` WHERE `option_name` LIKE '_transient_%' AND `option_name` NOT LIKE '_transient_timeout_%'
-        //
 
         $t_values = self::get_transients();
         $t_timeouts = self::get_transient_timeouts();
 
-        // todo: timezone?
         $now = time();
 
         $matrix = new Matrix();
@@ -323,7 +316,6 @@ Class SQL {
 
         global $wpdb;
 
-        // todo: is this query sufficient for taxonomies registered to multiple object types? (is group by correct?)
         $q = "
         SELECT t.*, tt.*, tr.*, p.post_type, p.ID, count(object_id) AS count FROM $wpdb->term_relationships AS tr
         INNER JOIN $wpdb->posts AS p ON p.ID = tr.object_id

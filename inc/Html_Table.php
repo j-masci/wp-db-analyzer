@@ -118,6 +118,8 @@ Class Html_Table {
             $value = is_scalar( @$table->rows[ $row_index ][ $col_index ] ) ? @$table->rows[ $row_index ][ $col_index ] : "";
             $class = 'col-' . $col_index;
 
+            // sanitize by default, but sometimes we have to set this to false and provide html
+            // so that the inner content can contain, for example, anchor tags.
             $sanitize = isset( $table->args[ 'sanitize_cell_data' ] ) ? $table->args[ 'sanitize_cell_data' ] : true;
             $_value = $sanitize ? htmlspecialchars( $value ) : $value;
 

@@ -70,6 +70,7 @@ Class Report_Factory {
 
                 return "Counts the number of posts published within date ranges and grouped by post type.";
             },
+            // this report is long, so we'll use a template instead.
             'template' => $report_template_path . '/post-date.php',
         ];
 
