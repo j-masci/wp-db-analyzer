@@ -26,34 +26,25 @@ Some **screenshots** can be found here for the time being: https://github.com/j-
 	It generates a number of reports that display information about your database.
 
 = What is in each report? =
-    Reports contain one or more tables that display data about your database. Normally, each table cell
-    shows the number of items in your database associated with the row and column heading.
+    Reports contain one or more tables that display data about your database. Normally, each table cell shows the number of items in your database associated with the row and column heading.
 
 = Is the plugin meant for non-developers? =
-    The plugin will be more useful for developers. The reports will make more sense if you have
-    a basic understanding of the WordPress database structure.
+    The plugin will be more useful for developers. The reports will make more sense if you have a basic understanding of the WordPress database structure.
 
 = Does the plugin clean up un-used data or make my site faster? =
     No. It only reads data from your database to generate reports.
 
 = How do I use the plugin? =
-    Once activated, look for "Database Analyzer" in the sidebar. Click on it, and then
-    select a single report or look for the button to run all reports.
+    Once activated, look for "Database Analyzer" in the sidebar. Click on it, and then select a single report or look for the button to run all reports.
 
 = Why did you make this plugin? =
-    I once had a site with a misbehaving plugin that was inserting too many items into the
-    posts and post meta table. It had caused the post meta table to grow to about 1 million rows,
-    which made the site slow in many cases. It was easy to find out how large the post meta
-    table was but it took some investigation to figure out why. During this process I realized it
-    would be useful to generate all of that data again for other WordPress installs. So, I made the plugin
-    for reporting on the posts and post meta table, and then decided to add a few more reports later on for
-    things related to options, users, terms, and comments.
+    I once had a site with a misbehaving plugin that was inserting too many items into the posts and post meta table. It had caused the post meta table to grow to about 1 million rows, which made the site slow in many cases. It was easy to find out how large the post meta table was but it took some investigation to figure out why. During this process I realized it would be useful to generate all of that data again for other WordPress installs. So, I made the plugin for reporting on the posts and post meta table, and then decided to add a few more reports later on for things related to options, users, terms, and comments.
 
 == Screenshots ==
 
 == Contributors & Developers ==
 
-Feel free to suggest or add anything that you might find useful.
+Feel free to suggest or add anything that you might find useful:
 
 https://github.com/j-masci/wp-db-analyzer
 
