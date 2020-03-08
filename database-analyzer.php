@@ -78,7 +78,7 @@ Class Plugin {
             'path' => $path,
             'dir' => 'database-analyzer',
             'url' => rtrim( plugins_url( 'database-analyzer' ), '/' ),
-            'report_template_path' => $path . '/tmpl/reports'
+            'report_template_path' => $path . '/reports'
         ];
 
         $this->includes( 1 );

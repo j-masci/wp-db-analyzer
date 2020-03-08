@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/j-masci/component-template.git",
-                "reference": "79a641726a3e8bf4426dcc74cf2b1078c23730e6"
+                "reference": "ae9ae8ad8dc6b3d92fafc7c653bdb02ca8dd7a87"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/j-masci/component-template/zipball/79a641726a3e8bf4426dcc74cf2b1078c23730e6",
-                "reference": "79a641726a3e8bf4426dcc74cf2b1078c23730e6",
+                "url": "https://api.github.com/repos/j-masci/component-template/zipball/ae9ae8ad8dc6b3d92fafc7c653bdb02ca8dd7a87",
+                "reference": "ae9ae8ad8dc6b3d92fafc7c653bdb02ca8dd7a87",
                 "shasum": ""
             },
             "type": "library",
@@ -34,7 +34,7 @@
                 }
             ],
             "description": "Base classes for creating flexible HTML rendering templates consisting of overridable callable components.",
-            "time": "2020-01-24T22:51:24+00:00"
+            "time": "2020-01-27T20:03:38+00:00"
         },
         {
             "name": "jmasci/html-table",
@@ -75,18 +75,21 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/j-masci/php-matrix-builder.git",
-                "reference": "d0e96e485005c71d2fa0794f82b527ff31eea66f"
+                "reference": "038bb4d42dc8b14689d7307d27bd4333986b2e8f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/j-masci/php-matrix-builder/zipball/d0e96e485005c71d2fa0794f82b527ff31eea66f",
-                "reference": "d0e96e485005c71d2fa0794f82b527ff31eea66f",
+                "url": "https://api.github.com/repos/j-masci/php-matrix-builder/zipball/038bb4d42dc8b14689d7307d27bd4333986b2e8f",
+                "reference": "038bb4d42dc8b14689d7307d27bd4333986b2e8f",
                 "shasum": ""
+            },
+            "require-dev": {
+                "phpunit/phpunit": "4.*"
             },
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "JMasci\\MatrixBuilder\\": ""
+                    "JMasci\\MatrixBuilder\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -96,8 +99,8 @@
                     "email": "masci.joel@gmail.com"
                 }
             ],
-            "description": "Builds a matrix dynamically",
-            "time": "2020-01-24T22:40:14+00:00"
+            "description": "A mutable matrix object with methods for sorting rows/columns, adding/removing cells, and a few other things.",
+            "time": "2020-03-07T17:09:21+00:00"
         }
     ],
     "packages-dev": [],
