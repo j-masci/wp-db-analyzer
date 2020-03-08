@@ -67,8 +67,6 @@ Class Reports {
 
         if ( isset( $report[ 'render' ] ) && is_callable( $report[ 'render' ] ) ) {
             call_user_func_array( $report[ 'render' ], [ $report, $request ] );
-        } else if ( isset( $report[ 'template' ] ) && file_exists( $report[ 'template' ] ) ) {
-            include $report[ 'template' ];
         }
 
         return ob_get_clean();

@@ -70,9 +70,11 @@ Class Report_Factory {
 
                 return "Counts the number of posts published within date ranges and grouped by post type.";
             },
-            'render' => function ( $self ) {
+            'render' => function ( $report, $request ) {
                 // putting this one in its own file since its fairly large
                 $p = Plugin::get_instance();
+
+                // note: $report, $request are required in the template file
                 include $p->settings['report_template_path'] . '/post-date.php';
             }
         ];
@@ -84,7 +86,7 @@ Class Report_Factory {
 
                 return "Counts the number of transients in wp_options grouped by the time until they expire.";
             },
-            'render' => function ( $self ) {
+            'render' => function ( $report, $request ) {
 
                 echo Html_Table::render( null, SQL::transients_report()->convert_to_record_set_with_headings( "Hours Until Expiry" ), [
                     'skip_header' => true,
