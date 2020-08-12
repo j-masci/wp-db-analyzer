@@ -1,7 +1,8 @@
 A WordPress plugin to report on the size and structure of your database.
 
-This plugin is somewhat geared towards developers. The results will be more meaningful if you have a basic
-understanding of how the WordPress database works.
+WordPress plugin url: https://wordpress.org/plugins/database-analyzer/
+
+This plugin is geared towards developers or those that are familiar with the WordPress database structure.
 
 This plugin will:
 - Read your database to generate reports.

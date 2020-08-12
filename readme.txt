@@ -2,7 +2,7 @@
 Contributors: joelmasci
 Tags: database, reports, metrics, developer
 Requires at least: 4.0
-Tested up to: 5.3
+Tested up to: 5.5
 Stable tag: 1.0
 Requires PHP: 5.6
 License: GPLv2 or later
